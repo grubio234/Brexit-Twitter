@@ -1,0 +1,9 @@
+.vscode/*
+*/nltk/*
+
+
+*.synctex.gz
+*.log
+*.aux
+
+*.pyc
