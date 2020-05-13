@@ -17,7 +17,7 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer
 class Analyzer:
 
     data_dir = ""
-    common_wordlist = "common.csv"
+    common_wordlist = "common_words.txt"
     unwanted_chars = "!\"§$%&/()=?{[]}\\`´*+~'-_.:,;<>|^°"
 
     def __init__(self):
