@@ -1,9 +1,10 @@
 .vscode/*
 */nltk/*
 
-
 *.synctex.gz
 *.log
 *.aux
 
 *.pyc
+
+*custom_config.py
