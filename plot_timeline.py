@@ -1,3 +1,4 @@
+from __future__ import print_function
 from config.config import data_dir
 from analyzer.analyzer import SSIXAnalyzer
 from loader.loader import Loader
@@ -33,20 +34,19 @@ def get_timeline_count(tweets_file, keywords=None, timezones=None):
             if timezone in t:
                 return True
         return False
-
+    print(keywords)
+    print(len(data["text"]))
     if not keywords is None:
         data = data[data["text"].apply(valid_keyword) == True]
 
     if not timezones is None:
         data = data[data["user_time_zone"].apply(valid_timezone) == True]
 
-    print len(data.index)
-
     data["created_at"] = data["created_at"].astype("datetime64")
     a = data["created_at"].groupby(data["created_at"].dt.date).count()
 
 
-    print a
+    print(a)
     a = a.to_frame()
     return np.array(date2num(a.index)), np.array(a.values)
 
@@ -62,7 +62,7 @@ def fill_with_zeros(x, y):
 
     N = len(x_full)
     x_filled = np.array(list(x_full))
-    print x_filled
+    print(x_filled)
 
     x_res = len(x)*[x_filled]
     y_res = []
@@ -70,21 +70,21 @@ def fill_with_zeros(x, y):
     for xv, yv in zip(x, y):
         y_filled = np.zeros(N)
         for j in range(xv.size):
-            for i in range(N): 
+            for i in range(N):
                 if xv[j] == x_filled[i]:
                     y_filled[i] = yv[j]
                     break
         y_res.append(y_filled)
 
     return x_res, y_res
-        
+
 
 def plot_timelines(ax, x, y, colors, labels):
     N = len(x)
     assert N == len(y), "x and y must be lists of same length"
 
     bar_width = 0.8/N
-   
+
     ax.xaxis.set_major_formatter(xfmt)
     ax.xaxis.set_major_locator(MultipleLocator(base=1.0))
     for i in range(N):
@@ -107,9 +107,9 @@ def plot_stacked_timelines(ax, x, y, colors, labels):
     for i in range(N):
         ax.bar(x[i], y[i], bottom=ybottom, width=bar_width, color=colors[i], label=labels[i])
         ybottom += y[i].flatten()
-        print "Plotted ", labels[i]
+        print("Plotted ", labels[i])
 
-    
+
 def foreach_keyword(tweets_csv, keywords, timezones=None):
     """
         Filter for each keyword in keywords and matching timezones
@@ -147,7 +147,7 @@ def run_experiment(tweets_csv, keywords, timezoneslist, titles, colors):
         x, y, labels = foreach_keyword(tweets_csv, keywords, timezones)
         xf, yf = fill_with_zeros(x, y)
         plot_stacked_timelines(ax, xf, yf, colors, labels)
-    
+
         ax.set_xlabel("Date")
         ax.set_ylabel("Tweet count")
         ax.xaxis_date()
@@ -159,15 +159,16 @@ def run_experiment(tweets_csv, keywords, timezoneslist, titles, colors):
 
 
 # file with tweets
-#tweets_csv = "./data/Feb_16.csv"
-#tweets_csv = "./data/Apr_16.csv"
-tweets_csv = "./data/brexit_data.csv"
+#tweets_csv = data_dir + "Feb_16.csv"
+#tweets_csv = data_dir + "Apr_16.csv"
+#tweets_csv = data_dir + "brexit_data.csv"
+tweets_csv = data_dir + "brexit_short.csv"
 #tweets_csv = data_dir + "april_13_15.csv"
 
 # Europe
 EU = ["Amsterdam", "Andorra", "Athens", "Belfast", "Belgrade", "Berlin", "Bern",
       "Brussels", "Bucharest", "Budapest", "Copenhagen", "Dublin", "Edinburgh",
-      "Helsinki", "Istanbul", "Kaliningrad", "Kiev", "Lisbon", "London", "Luxembourg", 
+      "Helsinki", "Istanbul", "Kaliningrad", "Kiev", "Lisbon", "London", "Luxembourg",
       "Madrid", "Malta", "Minsk", "Moscow", "Oslo", "Paris", "Prague", "Riga",
       "Rome", "Sarajevo", "Skopje", "Sofia", "Sofia", "Stockholm", "Tallinn",
       "Vienna", "Warsaw", "Zurich"]

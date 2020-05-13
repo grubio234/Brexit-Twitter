@@ -1,11 +1,12 @@
-print "Starting imports.."
+from __future__ import print_function
+print("Starting imports..")
 # Own modules
 from config.config import data_dir
 import analyzer.analyzer as an
 from loader.loader import Loader
 
 # Python modules
-import pandas
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.dates import date2num
@@ -16,72 +17,75 @@ def dictincr(dictionary, value):
     except:
         dictionary[value] = 1
 
-print "Starting program.."
+print("Starting program..")
 
 ssix = an.SSIXAnalyzer(data_dir)
 
-leave_keys = ["ukip", "no2eu", "britainout", "voteleave", "leaveeu"] 
-other_keys = ["euref", "eureferendum", "takecontrol"] 
-stay_keys = ["#strongerin", "remain", "ukineu"] 
+leave_keys = ["ukip", "no2eu", "britainout", "voteleave", "leaveeu"]
+other_keys = ["euref", "eureferendum", "takecontrol"]
+stay_keys = ["#strongerin", "remain", "ukineu"]
 
 def remove_if_contains(df, key):
-    print "indices:", df.index
-    count_before = df["id"].count()                                                    
-    df = df[df["text"].apply(contains_key) == False]                                   
-    count_after = df["id"].count()    
+    print("indices:", df.index)
+    count_before = df["id"].count()
+    df = df[df["text"].apply(contains_key) == False]
+    count_after = df["id"].count()
 
     return df, count_before - count_after
 
 def count_for_set(df, dates, keys):
-    dates_set = df["created_at"].dt.date.to_frame()
-    dates_set = np.array(date2num(dates_set)).flatten()
+    #dates_set = df["created_at"].dt.date.to_frame()
+    #dates_set = np.array(date2num(dates_set)).flatten()
+    dates_set = df["created_at"].dt.date.apply(date2num)
+    print(set(dates_set.values))
 
     # distinct days
     counts = {}
 
     for i, idx in enumerate(df.index):
         if i % 5000 == 0:
-            print "Processed {} tweets".format(i)
+            print("Processed {} tweets".format(i))
 
         tweet = df.loc[idx, "text"]
-        day = dates_set[i]
+        day = dates_set[idx]
         for key in keys:
             if key in tweet:
-		try: 
+                try:
                     counts[day] += 1
-		except:
-		    counts[day] = 1
+                except:
+                    counts[day] = 1
 
                 df = df.drop(idx)
                 break
 
     return df, counts
 
-l = Loader("./data/May_16.csv")
+l = Loader(data_dir + "May_16.csv")
 df = l.get_dataframe()
-df["created_at"] = pandas.to_datetime(df["created_at"])
-dates = df["created_at"].dt.date.to_frame()
-dates = np.array(date2num(dates)).flatten()
+df["created_at"] = pd.to_datetime(df["created_at"])
+#dates = df["created_at"].dt.date.to_frame()
+#dates = np.array(date2num(dates)).flatten()
+dates = df["created_at"].dt.date.apply(date2num)
 
-print "==== Size : {} ====".format(len(df.index))
+print("==== Size : {} ====".format(len(df.index)))
 
 # Remove tweets containing keywords mapped to a fixed sentiment
 df, counts_leave  = count_for_set(df, dates, leave_keys)
 df, counts_other = count_for_set(df, dates, other_keys)
 df, counts_stay = count_for_set(df, dates, stay_keys)
 
-print "==== Size : {} ====".format(len(df.index))
+print("==== Size : {} ====".format(len(df.index)))
 
-print "Days   : ", dates
-print "==== Leave ===="
-print "Counts : ", counts_leave
-print "\n"
-print "==== Other ===="
-print "Counts : ", counts_other
-print "\n"
-print "==== Stay  ===="
-print "Counts : ", counts_stay
-print "\n"
+print("Days   : ", dates)
+print("==== Leave ====")
+print("Counts : ", counts_leave)
+print("\n")
+print("==== Other ====")
+print("Counts : ", counts_other)
+print("\n")
+print("==== Stay  ====")
+print("Counts : ", counts_stay)
+print("\n")
 
 # Save counts of keywords only for later usage with python -i
 counts_leave_base = counts_leave.copy()
@@ -92,15 +96,16 @@ counts_stay_base = counts_stay.copy()
 threshold_leave = -0.00661286
 threshold_stay = 0.00830461
 
-dates = df["created_at"].dt.date.to_frame()
-dates = np.array(date2num(dates)).flatten()
+#dates = df["created_at"].dt.date.to_frame()
+#dates = np.array(date2num(dates)).flatten()
+dates = df["created_at"].dt.date.apply(date2num)
 
 for i, idx in enumerate(df.index):
     if i % 5000 == 0:
-        print "Processed {} tweets".format(i)
+        print("Processed {} tweets".format(i))
 
     tweet = df.loc[idx, "text"]
-    day = dates[i]
+    day = dates[idx]
     val = ssix.get_values([tweet])[0]
     use_threshold = True
     if use_threshold:
@@ -123,18 +128,18 @@ counts_leave = np.array(counts_leave.values())
 counts_other = np.array(counts_other.values())
 
 """
-days = np.array(list(set(dates)))
+days = np.array(sorted(list(set(dates))))
 
-print "Dates   : ", days
-print "==== Leave ===="
-print "Counts : ", counts_leave
-print "\n"
-print "==== Other ===="
-print "Counts : ", counts_other
-print "\n"
-print "==== Stay  ===="
-print "Counts : ", counts_stay
-print "\n"
+print("Dates   : ", days)
+print("==== Leave ====")
+print("Counts : ", counts_leave)
+print("\n")
+print("==== Other ====")
+print("Counts : ", counts_other)
+print("\n")
+print("==== Stay  ====")
+print("Counts : ", counts_stay)
+print("\n")
 
 from matplotlib.dates import DayLocator, DateFormatter
 
@@ -171,8 +176,10 @@ ax.xaxis.set_major_formatter(xfmt)
 ax.xaxis.set_major_locator(loc)
 ax.set_title("Tweet count for leave / stay")
 w = 0.2
-ax.bar(np.array(counts_leave.keys()), np.array(counts_leave.values()), width=w, color="r", label="leave")
-ax.bar(np.array(counts_stay.keys())+w, np.array(counts_stay.values()), width=w, color="b", label="stay")
+y = np.array([counts_leave[day] for day in days])
+ax.bar(days, y, width=w, color="r", label="leave")
+y2 = np.array([counts_stay[day] for day in days])
+ax.bar(days+w, y2, width=w, color="b", label="stay")
 ax.set_xlabel("Dates")
 ax.set_ylabel("Tweet count")
 #ax.xaxis_date()
@@ -192,13 +199,13 @@ for dictionary in dictionaries:
 
 for key in all_keys:
     for dictionary in dictionaries:
-        if not dictionary.has_key(key):
+        if key not in dictionary:
             dictionary[key] = 0
-    
 
-counts_leave_vals = np.array(counts_leave.values())
-counts_stay_vals = np.array(counts_stay.values())
-counts_other_vals = np.array(counts_other.values())
+
+counts_leave_vals = np.array([counts_leave[day] for day in days])
+counts_stay_vals = np.array([counts_stay[day] for day in days])
+counts_other_vals = np.array([counts_other[day] for day in days])
 tot = counts_leave_vals + counts_stay_vals + counts_other_vals
 tot = np.max(np.vstack((tot, np.ones_like(tot))), axis=0)
 counts_leave_normalised = 1.0*counts_leave_vals/tot
@@ -211,9 +218,9 @@ ax.xaxis.set_major_formatter(xfmt)
 ax.xaxis.set_major_locator(loc)
 ax.set_title("Tweet count for leave / other / stay")
 w = 0.6
-ax.bar(counts_leave.keys(), counts_leave_normalised, width=w, color="r", label="leave")
-ax.bar(counts_stay.keys(), counts_stay_normalised, width=w, bottom=counts_leave_normalised, color="b", label="stay")
-ax.bar(counts_other.keys(), counts_other_normalised, width=w, bottom=1-counts_other_normalised, color="g", label="other")
+ax.bar(days, counts_leave_normalised, width=w, color="r", label="leave")
+ax.bar(days, counts_stay_normalised, width=w, bottom=counts_leave_normalised, color="b", label="stay")
+ax.bar(days, counts_other_normalised, width=w, bottom=1-counts_other_normalised, color="g", label="other")
 ax.set_xlabel("Dates")
 ax.set_ylabel("Tweet count")
 #plt.legend(loc="best")

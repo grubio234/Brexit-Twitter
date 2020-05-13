@@ -6,4 +6,4 @@ if platform.system() == "Windows":
     sys.path.insert(1, r'C:\Users\jonas\OneDrive\ETH\DataAna\vaderFolder')
     data_dir = r'C:\Users\jonas\OneDrive\ETH\DataAna'+'\\'
 else:
-    data_dir = "/home/jgacon/uni/brexit-project/data/"
+    data_dir = "data_git/"

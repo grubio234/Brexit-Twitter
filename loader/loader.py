@@ -2,7 +2,8 @@ import json
 import csv
 import pandas
 import os
-import StringIO
+#from StringIO import StringIO # Python2.
+from io import BytesIO # Python2&3.
 import warnings
 
 def safe_to_lower(x):
@@ -11,7 +12,7 @@ def safe_to_lower(x):
     except:
         warnings.warn("x has no method 'lower()', x = {}".format(x))
         res = "empty"
-    return res 
+    return res
 
 class Loader:
 
@@ -21,13 +22,13 @@ class Loader:
         self.load_file(filename)
 
     def load_file(self, filename):
-        try: 
+        try:
             with open(filename, "rb") as handler:
                 content = handler.read()
         except:
             raise SystemError("Couldn't open file " + filename)
 
-        io = StringIO.StringIO(content)
+        io = BytesIO(content)
         suffix = os.path.splitext(filename)[1]
         if suffix == ".json":
             self.data = pandas.read_json(io)

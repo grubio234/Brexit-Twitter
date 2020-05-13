@@ -1,18 +1,23 @@
 # -*- coding: utf-8 -*-
-
+from __future__ import print_function
+from config.config import data_dir
 import numpy as np # numpy
 import re # regular expressions
 import json # json strings
+import os.path
 import pandas as pd # panda dataframe
 import nltk
-import StringIO
+try:
+    from StringIO import StringIO # Python2.
+except ImportError:
+    from io import StringIO # Python3.
 
-import vaderSentiment.vaderSentiment as vader # sentiment analysis engine
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 class Analyzer:
 
     data_dir = ""
-    common_wordlist = "common_words.txt"
+    common_wordlist = "common.csv"
     unwanted_chars = "!\"§$%&/()=?{[]}\\`´*+~'-_.:,;<>|^°"
 
     def __init__(self):
@@ -84,11 +89,11 @@ class SSIXAnalyzer(Analyzer):
 
         # try to load weight dict from file, if not possible re-compute it
         try:
-            print "Trying to load weight dict from " + data_dir + "weight.json.."
+            print("Trying to load weight dict from " + data_dir + "weight.json..")
             self.weight = json.load(open(data_dir+"weight.json"))
             return
         except:
-            print "Weight dict not found in weight.json, recomputing it.."
+            print("Weight dict not found in weight.json, recomputing it..")
 
         # get ssix tweets
         with open(data_dir + ssix_tweets) as handler:
@@ -100,7 +105,7 @@ class SSIXAnalyzer(Analyzer):
         #for i, raw_text in enumerate(tweets_panda["text"]):
         #    tweets_panda.set_value(i, "tokenized", nltk.word_tokenize(unicode(raw_text, "utf-8")))
 
-        print "Initializing dictionaries from SSIX Brexit Gold Standard.."
+        print("Initializing dictionaries from SSIX Brexit Gold Standard..")
         with open(data_dir + ssix_data) as handler:
             ssix = pd.read_json(handler)
 
@@ -121,7 +126,7 @@ class SSIXAnalyzer(Analyzer):
                 else:
                     self.add_text_to_dict(undecided, text)
 
-        print "Computing weight dictionary.."
+        print("Computing weight dictionary..")
         # list of dictionaries for easy handling
         dictionaries = [leave, stay, undecided]
 
@@ -145,15 +150,15 @@ class SSIXAnalyzer(Analyzer):
                     pass
             self.weight[key] = self.weight_function(*occurences)
 
-        print "Max values: ", np.max(self.weight.values())
+        print("Max values: ", np.max(self.weight.values()))
 
-        print "Saving weight dict to " + data_dir + "weight.json .."
+        print("Saving weight dict to " + data_dir + "weight.json ..")
         try:
             json.dump(self.weight, open(data_dir+"weight.json", "w"))
         except:
-            print "Couldn't save dictionary to file."
+            print("Couldn't save dictionary to file.")
 
-        print "Done."
+        print("Done.")
 
     def weight_function(self, a, b, c):
         """
@@ -209,7 +214,11 @@ class SSIXAnalyzer(Analyzer):
 
 class VaderAnalyzer(Analyzer):
 
-    analyzer = vader.SentimentIntensityAnalyzer()
+    vader_lexicon_folder = data_dir + "nltk/"
+    vader_lexicon_file = vader_lexicon_folder+"sentiment/vader_lexicon.zip/vader_lexicon/vader_lexicon.txt"
+    if not os.path.isfile(vader_lexicon_file):
+        nltk.download("vader_lexicon", download_dir=vader_lexicon_folder)
+    analyzer = SentimentIntensityAnalyzer(lexicon_file=vader_lexicon_file)
 
     def __init__(self):
         pass
