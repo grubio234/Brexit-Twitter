@@ -60,7 +60,7 @@ def count_for_set(df, dates, keys):
     return df, counts
 
 l = TweetStore(data_dir + "May_16.csv")
-df = l.get_dataframe()
+df = l.getTweets()
 df["created_at"] = pd.to_datetime(df["created_at"])
 #dates = df["created_at"].dt.date.to_frame()
 #dates = np.array(date2num(dates)).flatten()
@@ -105,7 +105,7 @@ for i, idx in enumerate(df.index):
 
     tweet = df.loc[idx, "text"]
     day = dates[idx]
-    val = ssix.get_values([tweet])[0]
+    val = ssix.getValues([tweet])[0]
     use_threshold = True
     if use_threshold:
         if val <= threshold_leave:

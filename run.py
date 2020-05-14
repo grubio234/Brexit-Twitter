@@ -14,8 +14,8 @@ def simpleTest():
               "Fuck that spineless moron cameron #mimimi",
               "Actually the EU is awesome #stay"]
 
-    print(ssix.get_values(tweets))
-    print(vader.get_values(tweets))
+    print(ssix.getValues(tweets))
+    print(vader.getValues(tweets))
 
 def testSentiment():
     runpy.run_path("sentiment.py")

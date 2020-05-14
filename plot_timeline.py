@@ -20,7 +20,7 @@ ax = plt.axes()
 def get_timeline_count(tweets_file, keywords=None, timezones=None):
     # get dataframe
     l = TweetStore(tweets_file)
-    data = l.get_dataframe()
+    data = l.getTweets()
 
     def valid_keyword(x):
         for keyword in keywords:

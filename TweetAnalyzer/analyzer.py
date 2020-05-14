@@ -16,33 +16,36 @@ analyzer_data = Path(__file__).parent / "data"
 class Analyzer:
 
     data_dir = ""
-    common_wordlist = analyzer_data / "common_words.txt"
     unwanted_chars = "!\"§$%&/()=?{[]}\\`´*+~'-_.:,;<>|^°"
 
     def __init__(self):
         pass
 
-    def get_value(self, word):
+    def getValue(self, word):
         raise NotImplementedError
 
-    def get_values(self, textlist):
+    def getValues(self, textlist):
         raise NotImplementedError
 
-    def validate(self, text):
-        """
-            Validate a given sentence
-              text (string) : input sentence
-            Returns:
-              wordlist (list) : list of valid words in the sentence
-        """
-        wordlist = []
-        for word in text.split():
-            word = word.lower()
-            word = word.strip(self.unwanted_chars)
-            word = re.sub(r"[^\x20-\x7e]", "", word)
+    def getCleanedWord(self, word):
+        word = word.lower()
+        word = word.strip(self.unwanted_chars)
+        word = re.sub(r"[^\x20-\x7e]", "", word)
+        return word
+
+    def getValidWords(self, sentence):
+        words = []
+        for word in sentence.split():
             if not "http" in word:
-                wordlist.append(word)
-        return wordlist
+                cleaned_word = self.getCleanedWord(word)
+                words.append(cleaned_word)
+        return words
+
+
+class SSIXAnalyzer(Analyzer):
+
+    weight = {}
+    common_wordlist = analyzer_data / "common_words.txt"
 
     def remove_common(self, dictionary):
         """
@@ -57,6 +60,18 @@ class Analyzer:
                 except:
                     pass
 
+    def add_text_to_dict(self, dictionary, text):
+        """
+            Add all words in text to dictionary by increasing value of the dictionary by
+            one, using the word as key
+        """
+        wordlist = self.getValidWords(text)
+        for word in wordlist:
+            try:
+                dictionary[word] += 1
+            except:
+                dictionary[word] = 1
+
     def normalize(self, dictionary):
         """
             Normalize a dictionary, such that the sum of all values is 1
@@ -64,23 +79,6 @@ class Analyzer:
         factor = 1./np.sum(dictionary.values())
         for key in dictionary:
             dictionary[key] = dictionary[key]*factor
-
-class SSIXAnalyzer(Analyzer):
-
-    weight = {}
-    data_dir = ""
-
-    def add_text_to_dict(self, dictionary, text):
-        """
-            Add all words in text to dictionary by increasing value of the dictionary by
-            one, using the word as key
-        """
-        wordlist = self.validate(text)
-        for word in wordlist:
-            try:
-                dictionary[word] += 1
-            except:
-                dictionary[word] = 1
 
     def __init__(self, data_dir, ssix_data="ssix.json", ssix_tweets="ssix_tweets.csv"):
 
@@ -176,7 +174,7 @@ class SSIXAnalyzer(Analyzer):
             Returns:
               val (float) : sentiment of string
         """
-        wordlist = self.validate(text)
+        wordlist = self.getValidWords(text)
         val = 0
         for word in wordlist:
             try:
@@ -186,20 +184,20 @@ class SSIXAnalyzer(Analyzer):
         return val
 
 
-    def get_value(self, word):
+    def getValue(self, word):
         """
             Get value of a single word
         """
-        wordlist = self.validate(word)
+        wordlist = self.getValidWords(word)
         if len(wordlist) > 1:
-            raise ValueError("get_value takes only a single word!")
+            raise ValueError("getValue takes only a single word!")
         try:
             val = self.weight[wordlist[0]]
         except:
             val = 0
         return val
 
-    def get_values(self, textlist):
+    def getValues(self, textlist):
         """
             Get values of a list of strings
               textlist (list) : list of strings, input sentences
@@ -226,16 +224,16 @@ class VaderAnalyzer(Analyzer):
     def __init__(self):
         pass
 
-    def get_value(self, word):
+    def getValue(self, word):
         """
             Get value of a single word
         """
-        wordlist = self.validate(word)
+        wordlist = self.getValidWords(word)
         if len(wordlist) > 1:
-            raise ValueError("get_value takes only a single word!")
+            raise ValueError("getValue takes only a single word!")
         return self.analyzer.polarity_scores(wordlist[0])['compound']
 
-    def get_values(self, textlist):
+    def getValues(self, textlist):
         """
             Get values of a list of strings
               textlist (list) : list of strings, input sentences

@@ -17,7 +17,7 @@ def loadDataFrame(filename):
         elif file_extension == ".csv":
             df = pd.read_csv(file_data, error_bad_lines=False)
         else:
-            raise TweetStoreException("NotImplementedError: Only .json or .csv "
+            raise NotImplementedError("Only .json or .csv "
                 "files can be loaded! '{}' files are not implemented yet"
                 "".format(file_extension))
         return df
