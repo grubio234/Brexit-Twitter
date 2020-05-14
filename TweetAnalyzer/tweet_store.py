@@ -20,7 +20,12 @@ def loadDataFrame(filename):
                 "".format(file_extension))
         return df
 
-def checkMissingColumn(df_columns, features):
+
+def addDate(df, time_stamp="created_at"):
+    df["date"] = pd.to_datetime(df[time_stamp]).dt.date
+
+
+def checkMissingFeature(df_columns, features):
     for feature in features:
         if feature not in df_columns:
             columns_string = ", ".join(df_columns)
@@ -31,21 +36,17 @@ def checkMissingColumn(df_columns, features):
 def withoutDeletedTweets(df, text_column="text"):
     return df[df[text_column] != "deleted"]
 
-def loadTweets(filename, features):
-    full_df = loadDataFrame(filename)
-    checkMissingColumn(full_df.columns, features)
-    tweets = full_df[features]
-    tweets_sanitized = withoutDeletedTweets(tweets)
-    return tweets_sanitized
-
 
 class TweetStore:
-    features = [
+    base_features = [
         "created_at",
         "id",
         "text",
         "user_time_zone"
         ]
+    features = base_features + [
+        "date"
+    ]
 
     def __init__(self, filenames=None):
         self.tweets = pd.DataFrame(columns=self.features)
@@ -54,8 +55,17 @@ class TweetStore:
         for fn in filenames:
             self.addTweets(fn)
 
+    def loadTweets(self, filename):
+        full_df = loadDataFrame(filename)
+        checkMissingFeature(full_df.columns, self.base_features)
+        tweets = full_df[self.base_features]
+        tweets_sanitized = withoutDeletedTweets(tweets)
+        addDate(tweets_sanitized)
+        checkMissingFeature(tweets_sanitized.columns, self.features)
+        return tweets_sanitized
+
     def addTweets(self, filename):
-        new_tweets = loadTweets(filename, self.features)
+        new_tweets = self.loadTweets(filename)
         self.tweets = self.tweets.append(new_tweets)
 
     def getTweetTexts(self, text_column="text"):
