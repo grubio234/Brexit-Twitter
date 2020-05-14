@@ -11,7 +11,7 @@ def loadDataFrame(filename):
             file_bytes = handler.read()
             file_data = BytesIO(file_bytes)
 
-        file_extension = "." + filename.split(".")[-1]
+        file_extension = "." + str(filename).split(".")[-1]
         if file_extension == ".json":
             df = pd.read_json(file_data)
         elif file_extension == ".csv":
