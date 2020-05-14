@@ -51,14 +51,14 @@ class TweetStore:
 
     def __init__(self, filenames=None):
         self.tweets = pd.DataFrame(columns=self.features)
-        if isinstance(filename, str):
+        if isinstance(filenames, str):
             filenames = [filenames]
         for fn in filenames:
             self.addTweets(fn)
 
     def addTweets(self, filename):
         new_tweets = loadTweets(filename, self.features)
-        self.tweets.append(new_tweets)
+        self.tweets = self.tweets.append(new_tweets)
 
     def getTweetTexts(self, text_column="text"):
         return self.tweets[text_column]

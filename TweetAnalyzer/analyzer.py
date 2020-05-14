@@ -14,18 +14,19 @@ import numpy as np
 
 analyzer_data = Path(__file__).parent / "data"
 class Analyzer:
-
-    data_dir = ""
     unwanted_chars = "!\"§$%&/()=?{[]}\\`´*+~'-_.:,;<>|^°"
 
     def __init__(self):
         pass
 
-    def getValue(self, word):
+    def getTweetScore(self, word):
         raise NotImplementedError
 
-    def getValues(self, textlist):
-        raise NotImplementedError
+    def getTweetScores(self, tweet_text_list):
+        vals = np.zeros(len(tweet_text_list))
+        for i, tweet_text in enumerate(tweet_text_list):
+            vals[i] = self.getTweetScore(tweet_text)
+        return vals
 
     def getCleanedWord(self, word):
         word = word.lower()
@@ -34,12 +35,12 @@ class Analyzer:
         return word
 
     def getValidWords(self, sentence):
-        words = []
+        valid_words = []
         for word in sentence.split():
             if not "http" in word:
                 cleaned_word = self.getCleanedWord(word)
-                words.append(cleaned_word)
-        return words
+                valid_words.append(cleaned_word)
+        return valid_words
 
 
 class SSIXAnalyzer(Analyzer):
@@ -140,56 +141,25 @@ class SSIXAnalyzer(Analyzer):
         return n_stay - n_leave
         #return (b**2 - a**2)/np.log(np.e - 1 + a + b + c)
 
-    def judge_text(self, text):
-        wordlist = self.getValidWords(text)
+    def getTweetScore(self, tweet_text):
         val = 0
-        for word in wordlist:
-            try:
+        words_in_tweet = self.getValidWords(tweet_text)
+        for word in words_in_tweet:
+            if word in self.weight:
                 val += self.weight[word]
-            except:
-                pass
         return val
-
-
-    def getValue(self, word):
-        wordlist = self.getValidWords(word)
-        if len(wordlist) > 1:
-            raise ValueError("getValue takes only a single word!")
-        try:
-            val = self.weight[wordlist[0]]
-        except:
-            val = 0
-        return val
-
-    def getValues(self, textlist):
-        vals = []
-        for text in textlist:
-            vals.append(self.judge_text(text))
-        return vals
 
 
 def vaderLexiconFile(directory=analyzer_data):
-    vader_lexicon_file = ( directory / "sentiment" /
+    vader_lexicon = ( directory / "sentiment" /
         "vader_lexicon.zip" / "vader_lexicon" / "vader_lexicon.txt" )
-    if not vader_lexicon_file.is_file():
+    if not vader_lexicon.is_file():
         nltk.download("vader_lexicon", download_dir=directory)
-    return str(vader_lexicon_file)
+    return str(vader_lexicon)
 
 class VaderAnalyzer(Analyzer):
 
     analyzer = SentimentIntensityAnalyzer(vaderLexiconFile())
 
-    def __init__(self):
-        pass
-
-    def getValue(self, word):
-        wordlist = self.getValidWords(word)
-        if len(wordlist) > 1:
-            raise ValueError("getValue takes only a single word!")
-        return self.analyzer.polarity_scores(wordlist[0])['compound']
-
-    def getValues(self, textlist):
-        vals = []
-        for text in textlist:
-            vals.append(self.analyzer.polarity_scores(text)['compound'])
-        return vals
+    def getTweetScore(self, tweet_text):
+        return self.analyzer.polarity_scores(tweet_text)['compound']

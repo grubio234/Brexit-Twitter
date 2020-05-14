@@ -105,7 +105,7 @@ for i, idx in enumerate(df.index):
 
     tweet = df.loc[idx, "text"]
     day = dates[idx]
-    val = ssix.getValues([tweet])[0]
+    val = ssix.getTweetScores([tweet])[0]
     use_threshold = True
     if use_threshold:
         if val <= threshold_leave:
