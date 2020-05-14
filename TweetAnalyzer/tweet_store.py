@@ -1,8 +1,7 @@
-import json
 import csv
-import pandas
-from io import BytesIO # Python2&3.
-import warnings
+import json
+from io import BytesIO
+import pandas as pd
 
 class TweetStoreException(Exception):
     pass
@@ -14,9 +13,9 @@ def loadDataFrame(filename):
 
         file_extension = "." + filename.split(".")[-1]
         if file_extension == ".json":
-            df = pandas.read_json(file_data)
+            df = pd.read_json(file_data)
         elif file_extension == ".csv":
-            df = pandas.read_csv(file_data, error_bad_lines=False)
+            df = pd.read_csv(file_data, error_bad_lines=False)
         else:
             raise TweetStoreException("NotImplementedError: Only .json or .csv "
                 "files can be loaded! '{}' files are not implemented yet"

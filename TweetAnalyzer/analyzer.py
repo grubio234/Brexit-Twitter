@@ -1,19 +1,16 @@
-# -*- coding: utf-8 -*-
+
 from __future__ import print_function
-from .config import data_dir
-import numpy as np # numpy
-import re # regular expressions
-import json # json strings
-import os.path
-import pandas as pd # panda dataframe
-import nltk
+import re
+import json
+import pandas as pd
 from io import StringIO
 try:
     from pathlib import Path
 except ImportError:
     from pathlib2 import Path
-
+import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+import numpy as np
 
 analyzer_data = Path(__file__).parent / "data"
 class Analyzer:
