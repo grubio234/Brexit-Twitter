@@ -1,2 +1,2 @@
 from .analyzer import SSIXAnalyzer, VaderAnalyzer
-from .loader import TweetStore
+from .tweet_store import TweetStore
