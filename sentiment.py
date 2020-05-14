@@ -7,13 +7,6 @@ import numpy as np
 from TweetAnalyzer.config import data_dir
 from TweetAnalyzer import SSIXAnalyzer, TweetStore
 
-
-def dictincr(dictionary, value):
-    try:
-        dictionary[value] += 1
-    except:
-        dictionary[value] = 1
-
 print("Starting program..")
 
 ssix = SSIXAnalyzer(data_dir)
@@ -22,13 +15,6 @@ leave_keys = ["ukip", "no2eu", "britainout", "voteleave", "leaveeu"]
 other_keys = ["euref", "eureferendum", "takecontrol"]
 stay_keys = ["#strongerin", "remain", "ukineu"]
 
-def remove_if_contains(df, key):
-    print("indices:", df.index)
-    count_before = df["id"].count()
-    df = df[df["text"].apply(contains_key) == False]
-    count_after = df["id"].count()
-
-    return df, count_before - count_after
 
 def count_for_set(df, keys):
 
@@ -43,10 +29,7 @@ def count_for_set(df, keys):
         day = df["date"][idx]
         for key in keys:
             if key in tweet:
-                try:
-                    counts[day] += 1
-                except:
-                    counts[day] = 1
+                counts[day] += 1
 
                 df = df.drop(idx)
                 break
@@ -65,7 +48,7 @@ df, counts_stay = count_for_set(df, stay_keys)
 
 print("==== Size : {} ====".format(len(df.index)))
 
-print("Days   : ", df["date"])
+print("Days   : ", df["date"].unique)
 print("==== Leave ====")
 print("Counts : ", counts_leave)
 print("\n")
@@ -75,11 +58,6 @@ print("\n")
 print("==== Stay  ====")
 print("Counts : ", counts_stay)
 print("\n")
-
-# Save counts of keywords only for later usage with python -i
-counts_leave_base = counts_leave.copy()
-counts_other_base = counts_other.copy()
-counts_stay_base = counts_stay.copy()
 
 # Sentiment analysis for remaining tweets
 threshold_leave = -0.00661286
@@ -95,18 +73,18 @@ for i, idx in enumerate(df.index):
     use_threshold = True
     if use_threshold:
         if val <= threshold_leave:
-            dictincr(counts_leave, day)
+            counts_leave[day] += 1
         elif val >= threshold_stay:
-            dictincr(counts_stay, day)
+            counts_stay[day] += 1
         else:
-            dictincr(counts_other, day)
+            counts_other[day] += 1
     else:
         if val < 0:
-            dictincr(counts_leave, day)
+            counts_leave[day] += 1
         elif val > 0:
-            dictincr(counts_stay, day)
+            counts_stay[day] += 1
         else:
-            dictincr(counts_other, day)
+            counts_other[day] += 1
 
 print("Dates   : ", df["date"])
 print("==== Leave ====")
