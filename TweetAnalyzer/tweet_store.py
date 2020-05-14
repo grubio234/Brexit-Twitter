@@ -1,4 +1,5 @@
 from io import BytesIO
+import datetime
 import pandas as pd
 
 class TweetStoreException(Exception):
@@ -20,10 +21,8 @@ def loadDataFrame(filename):
                 "".format(file_extension))
         return df
 
-
 def addDate(df, time_stamp="created_at"):
     df["date"] = pd.to_datetime(df[time_stamp]).dt.date
-
 
 def checkMissingFeature(df_columns, features):
     for feature in features:
@@ -34,7 +33,7 @@ def checkMissingFeature(df_columns, features):
             "".format(feature, columns_string))
 
 def withoutDeletedTweets(df, text_column="text"):
-    return df[df[text_column] != "deleted"]
+    return df[df[text_column] != "deleted"].copy()
 
 
 class TweetStore:

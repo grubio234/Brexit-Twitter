@@ -4,19 +4,21 @@ import matplotlib.pyplot as plt
 from matplotlib.dates import date2num, DayLocator, DateFormatter
 from matplotlib.ticker import MultipleLocator
 import numpy as np
+import pandas as pd
 from TweetAnalyzer.config import data_dir
-from TweetAnalyzer import SSIXAnalyzer, TweetStore
+from TweetAnalyzer import SSIXAnalyzer, TweetStore, sentiments
 
 print("Starting program..")
 
 ssix = SSIXAnalyzer(data_dir)
 
-leave_keys = ["ukip", "no2eu", "britainout", "voteleave", "leaveeu"]
-other_keys = ["euref", "eureferendum", "takecontrol"]
-stay_keys = ["#strongerin", "remain", "ukineu"]
+keywords = {}
+keywords["leave"] = ["ukip", "no2eu", "britainout", "voteleave", "leaveeu"]
+keywords["undecided"] = ["euref", "eureferendum", "takecontrol"]
+keywords["stay"] = ["#strongerin", "remain", "ukineu"]
 
 
-def count_for_set(df, keys):
+def count_for_set(df, sentiments_df, keys):
 
     # distinct days
     counts = defaultdict(int)
@@ -29,73 +31,51 @@ def count_for_set(df, keys):
         day = df["date"][idx]
         for key in keys:
             if key in tweet:
-                counts[day] += 1
+                sentiments_df.loc[day] += 1
 
                 df = df.drop(idx)
                 break
 
-    return df, counts
-
 tweets = TweetStore(data_dir + "May_16.csv")
 df = tweets.getTweets()
-
-print("==== Size : {} ====".format(len(df.index)))
+print(df["created_at"])
+idx = sorted(df["date"].unique())
+sentiments_per_day = pd.DataFrame(0, index=idx, columns=sentiments)
+print("====  Total number of tweets to distribute: {}.".format(len(df)))
+print(sentiments_per_day)
 
 # Remove tweets containing keywords mapped to a fixed sentiment
-df, counts_leave  = count_for_set(df, leave_keys)
-df, counts_other = count_for_set(df, other_keys)
-df, counts_stay = count_for_set(df, stay_keys)
+count_for_set(df, sentiments_per_day["leave"], keywords["leave"])
+count_for_set(df, sentiments_per_day["undecided"], keywords["undecided"])
+count_for_set(df, sentiments_per_day["stay"], keywords["stay"])
 
 print("==== Size : {} ====".format(len(df.index)))
-
-print("Days   : ", df["date"].unique)
-print("==== Leave ====")
-print("Counts : ", counts_leave)
-print("\n")
-print("==== Other ====")
-print("Counts : ", counts_other)
-print("\n")
-print("==== Stay  ====")
-print("Counts : ", counts_stay)
-print("\n")
+print(sentiments_per_day)
 
 # Sentiment analysis for remaining tweets
 threshold_leave = -0.00661286
 threshold_stay = 0.00830461
-
-for i, idx in enumerate(df.index):
-    if i % 5000 == 0:
-        print("Processed {} tweets".format(i))
-
-    tweet = df.loc[idx, "text"]
-    day = df["date"][idx]
-    val = ssix.getTweetScores([tweet])[0]
-    use_threshold = True
-    if use_threshold:
-        if val <= threshold_leave:
-            counts_leave[day] += 1
-        elif val >= threshold_stay:
-            counts_stay[day] += 1
-        else:
-            counts_other[day] += 1
+def scoreToSentiment(score):
+    if score <= threshold_leave:
+        return "leave"
+    elif score >= threshold_stay:
+        return "stay"
     else:
-        if val < 0:
-            counts_leave[day] += 1
-        elif val > 0:
-            counts_stay[day] += 1
-        else:
-            counts_other[day] += 1
+        return "undecided"
+df["score"] = df["text"].apply(ssix.getTweetScore)
+df["sentiment"] = df["score"].apply(scoreToSentiment)
+#df["sentiment"] = "undecided"
+#df["sentiment"][df["score"] <= threshold_leave] = "leave"
+#df["sentiment"][df["score"] >= threshold_stay] = "stay"
 
-print("Dates   : ", df["date"])
-print("==== Leave ====")
-print("Counts : ", counts_leave)
-print("\n")
-print("==== Other ====")
-print("Counts : ", counts_other)
-print("\n")
-print("==== Stay  ====")
-print("Counts : ", counts_stay)
-print("\n")
+for day in df["date"].unique():
+    day_df = df[df["date"] == day]
+    sentiments_per_day["leave"][day] += sum(day_df["sentiment"] == "leave")
+    sentiments_per_day["stay"][day] += sum(day_df["sentiment"] == "stay")
+    sentiments_per_day["undecided"][day] += sum(day_df["sentiment"] == "undecided")
+
+print("====  Total number of tweets to distribute: {}.".format(len(df)))
+print(sentiments_per_day)
 
 
 loc = MultipleLocator(base=1.0)
@@ -107,35 +87,22 @@ ax.xaxis.set_major_formatter(xfmt)
 ax.xaxis.set_major_locator(loc)
 ax.set_title("Tweet count for leave / stay")
 w = 0.2
-y = np.array([counts_leave[day] for day in df["date"]])
+
+counts_leave = np.array([sentiments_per_day["leave"][day] for day in df["date"]])
+counts_stay = np.array([sentiments_per_day["stay"][day] for day in df["date"]])
+counts_other = np.array([sentiments_per_day["undecided"][day] for day in df["date"]])
 np_days = date2num(df["date"])
-ax.bar(np_days, y, width=w, color="r", label="leave")
-y2 = np.array([counts_stay[day] for day in df["date"]])
-ax.bar(np_days+w, y2, width=w, color="b", label="stay")
+ax.bar(np_days, counts_leave, width=w, color="r", label="leave")
+ax.bar(np_days+w, counts_stay, width=w, color="b", label="stay")
 ax.set_xlabel("Dates")
 ax.set_ylabel("Tweet count")
 plt.savefig("total_daycount_ls.pdf")
 
-all_keys = set(())
-dictionaries = [counts_leave, counts_stay, counts_other]
-
-for dictionary in dictionaries:
-    all_keys |= set(dictionary.keys())
-
-for key in all_keys:
-    for dictionary in dictionaries:
-        if key not in dictionary:
-            dictionary[key] = 0
-
-
-counts_leave_vals = np.array([counts_leave[day] for day in df["date"]])
-counts_stay_vals = np.array([counts_stay[day] for day in df["date"]])
-counts_other_vals = np.array([counts_other[day] for day in df["date"]])
-tot = counts_leave_vals + counts_stay_vals + counts_other_vals
+tot = counts_leave + counts_stay + counts_other
 tot = np.max(np.vstack((tot, np.ones_like(tot))), axis=0)
-counts_leave_normalised = 1.0*counts_leave_vals/tot
-counts_other_normalised = 1.0*counts_other_vals/tot
-counts_stay_normalised = 1.0*counts_stay_vals/tot
+counts_leave_normalised = 1.0*counts_leave/tot
+counts_other_normalised = 1.0*counts_other/tot
+counts_stay_normalised = 1.0*counts_stay/tot
 
 fig = plt.figure(figsize=(6,6))
 ax = plt.axes()
