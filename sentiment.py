@@ -1,9 +1,8 @@
 from __future__ import print_function
 print("Starting imports..")
 # Own modules
-from config.config import data_dir
-import analyzer.analyzer as an
-from loader.loader import Loader
+from JJAnalyzer.config import data_dir
+from JJAnalyzer import SSIXAnalyzer, Loader
 
 # Python modules
 import pandas as pd
@@ -19,7 +18,7 @@ def dictincr(dictionary, value):
 
 print("Starting program..")
 
-ssix = an.SSIXAnalyzer(data_dir)
+ssix = SSIXAnalyzer(data_dir)
 
 leave_keys = ["ukip", "no2eu", "britainout", "voteleave", "leaveeu"]
 other_keys = ["euref", "eureferendum", "takecontrol"]

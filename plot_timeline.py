@@ -1,7 +1,6 @@
 from __future__ import print_function
-from config.config import data_dir
-from analyzer.analyzer import SSIXAnalyzer
-from loader.loader import Loader
+from JJAnalyzer.config import data_dir
+from JJAnalyzer import SSIXAnalyzer, Loader
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates

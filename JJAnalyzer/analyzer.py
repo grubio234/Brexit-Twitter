@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-from config.config import data_dir
+from .config import data_dir
 import numpy as np # numpy
 import re # regular expressions
 import json # json strings

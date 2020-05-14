@@ -2,12 +2,11 @@ from __future__ import print_function
 import runpy
 
 def simpleTest():
-    from config.config import data_dir
-    import analyzer.analyzer as an
-    from loader.loader import Loader
+    from JJAnalyzer.config import data_dir
+    from JJAnalyzer import SSIXAnalyzer, VaderAnalyzer, Loader
 
-    ssix = an.SSIXAnalyzer(data_dir)
-    vader = an.VaderAnalyzer()
+    ssix = SSIXAnalyzer(data_dir)
+    vader = VaderAnalyzer()
 
     # Test case 1
     tweets = ["Terrorists want us to eat more fudge",
