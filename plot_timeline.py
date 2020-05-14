@@ -1,6 +1,6 @@
 from __future__ import print_function
-from JJAnalyzer.config import data_dir
-from JJAnalyzer import SSIXAnalyzer, TweetStore
+from TweetAnalyzer.config import data_dir
+from TweetAnalyzer import SSIXAnalyzer, TweetStore
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates

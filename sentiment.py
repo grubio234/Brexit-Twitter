@@ -1,8 +1,8 @@
 from __future__ import print_function
 print("Starting imports..")
 # Own modules
-from JJAnalyzer.config import data_dir
-from JJAnalyzer import SSIXAnalyzer, TweetStore
+from TweetAnalyzer.config import data_dir
+from TweetAnalyzer import SSIXAnalyzer, TweetStore
 
 # Python modules
 import pandas as pd

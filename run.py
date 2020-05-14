@@ -2,8 +2,8 @@ from __future__ import print_function
 import runpy
 
 def simpleTest():
-    from JJAnalyzer.config import data_dir
-    from JJAnalyzer import SSIXAnalyzer, VaderAnalyzer
+    from TweetAnalyzer.config import data_dir
+    from TweetAnalyzer import SSIXAnalyzer, VaderAnalyzer
 
     ssix = SSIXAnalyzer(data_dir)
     vader = VaderAnalyzer()
