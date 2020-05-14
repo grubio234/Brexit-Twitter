@@ -2,19 +2,18 @@ import json
 import csv
 import pandas
 import os
-#from StringIO import StringIO # Python2.
 from io import BytesIO # Python2&3.
 import warnings
 
-def safe_to_lower(x):
+def toLowerCaseHelper(string):
     try:
-        res = x.lower()
-    except:
+        lower_case_string = string.lower()
+    except AttributeError:
         warnings.warn("x has no method 'lower()', x = {}".format(x))
-        res = "empty"
-    return res
+        lower_case_string = "empty"
+    return lower_case_string
 
-class Loader:
+class TweetStore:
 
     data = []
 
@@ -22,13 +21,10 @@ class Loader:
         self.load_file(filename)
 
     def load_file(self, filename):
-        try:
-            with open(filename, "rb") as handler:
-                content = handler.read()
-        except:
-            raise SystemError("Couldn't open file " + filename)
+        with open(filename, "rb") as handler:
+            file_content = handler.read()
 
-        io = BytesIO(content)
+        io = BytesIO(file_content)
         suffix = os.path.splitext(filename)[1]
         if suffix == ".json":
             self.data = pandas.read_json(io)
@@ -38,14 +34,13 @@ class Loader:
             raise NotImplementedError("Only .json or .csv files can be loaded!")
 
         self.remove_deleted()
-        self.to_lower()
+        self.toLowerCase()
 
         return self
 
 
-    def to_lower(self):
-        #self.data["text"] = self.data["text"].apply(lambda x: x.lower())
-        self.data["text"] = self.data["text"].apply(safe_to_lower)
+    def toLowerCase(self):
+        self.data["text"] = self.data["text"].apply(toLowerCaseHelper)
 
     def remove_retweets(self):
         rt = lambda x: x[:2] == "rt"

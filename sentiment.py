@@ -2,7 +2,7 @@ from __future__ import print_function
 print("Starting imports..")
 # Own modules
 from JJAnalyzer.config import data_dir
-from JJAnalyzer import SSIXAnalyzer, Loader
+from JJAnalyzer import SSIXAnalyzer, TweetStore
 
 # Python modules
 import pandas as pd
@@ -59,7 +59,7 @@ def count_for_set(df, dates, keys):
 
     return df, counts
 
-l = Loader(data_dir + "May_16.csv")
+l = TweetStore(data_dir + "May_16.csv")
 df = l.get_dataframe()
 df["created_at"] = pd.to_datetime(df["created_at"])
 #dates = df["created_at"].dt.date.to_frame()

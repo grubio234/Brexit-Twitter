@@ -3,7 +3,7 @@ import runpy
 
 def simpleTest():
     from JJAnalyzer.config import data_dir
-    from JJAnalyzer import SSIXAnalyzer, VaderAnalyzer, Loader
+    from JJAnalyzer import SSIXAnalyzer, VaderAnalyzer
 
     ssix = SSIXAnalyzer(data_dir)
     vader = VaderAnalyzer()

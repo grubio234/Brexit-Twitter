@@ -1,6 +1,6 @@
 from __future__ import print_function
 from JJAnalyzer.config import data_dir
-from JJAnalyzer import SSIXAnalyzer, Loader
+from JJAnalyzer import SSIXAnalyzer, TweetStore
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -19,7 +19,7 @@ ax = plt.axes()
 
 def get_timeline_count(tweets_file, keywords=None, timezones=None):
     # get dataframe
-    l = Loader(tweets_file)
+    l = TweetStore(tweets_file)
     data = l.get_dataframe()
 
     def valid_keyword(x):
