@@ -7,17 +7,19 @@ import json # json strings
 import os.path
 import pandas as pd # panda dataframe
 import nltk
+from io import StringIO
 try:
-    from StringIO import StringIO # Python2.
+    from pathlib import Path
 except ImportError:
-    from io import StringIO # Python3.
+    from pathlib2 import Path
 
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
+analyzer_data = Path(__file__).parent / "data"
 class Analyzer:
 
     data_dir = ""
-    common_wordlist = "common_words.txt"
+    common_wordlist = analyzer_data / "common_words.txt"
     unwanted_chars = "!\"§$%&/()=?{[]}\\`´*+~'-_.:,;<>|^°"
 
     def __init__(self):
@@ -212,13 +214,17 @@ class SSIXAnalyzer(Analyzer):
             vals.append(self.judge_text(text))
         return vals
 
+
+def vaderLexiconFile(directory=analyzer_data):
+    vader_lexicon_file = ( directory / "sentiment" /
+        "vader_lexicon.zip" / "vader_lexicon" / "vader_lexicon.txt" )
+    if not vader_lexicon_file.is_file():
+        nltk.download("vader_lexicon", download_dir=directory)
+    return str(vader_lexicon_file)
+
 class VaderAnalyzer(Analyzer):
 
-    vader_lexicon_folder = data_dir + "nltk/"
-    vader_lexicon_file = vader_lexicon_folder+"sentiment/vader_lexicon.zip/vader_lexicon/vader_lexicon.txt"
-    if not os.path.isfile(vader_lexicon_file):
-        nltk.download("vader_lexicon", download_dir=vader_lexicon_folder)
-    analyzer = SentimentIntensityAnalyzer(lexicon_file=vader_lexicon_file)
+    analyzer = SentimentIntensityAnalyzer(vaderLexiconFile())
 
     def __init__(self):
         pass

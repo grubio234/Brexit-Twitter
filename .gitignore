@@ -10,3 +10,4 @@
 *.pdf
 !BrexitPaper_29-05-2017.pdf
 *custom_config.py
+*vader_lexicon.zip
