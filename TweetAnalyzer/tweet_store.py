@@ -49,39 +49,19 @@ class TweetStore:
         "user_time_zone"
         ]
 
-    def __init__(self, filename):
-        self.load_file(filename)
+    def __init__(self, filenames=None):
+        self.tweets = pd.DataFrame(columns=self.features)
+        if isinstance(filename, str):
+            filenames = [filenames]
+        for fn in filenames:
+            self.addTweets(fn)
 
-    def load_file(self, filename):
-        self.dataFrame = loadTweets(filename, self.features)
+    def addTweets(self, filename):
+        new_tweets = loadTweets(filename, self.features)
+        self.tweets.append(new_tweets)
 
+    def getTweetTexts(self, text_column="text"):
+        return self.tweets[text_column]
 
-    def remove_retweets(self):
-        rt = lambda x: x[:2] == "rt"
-        self.dataFrame = self.dataFrame[self.dataFrame["text"].apply(rt) == False]
-
-
-    def remove_if_contains(self, keyword, df=None):
-        """
-            Remove all tweets that contain 'keyword' from self.dataFrame (if df is None)
-            or from df (if df is given)
-        """
-        contains_key = lambda x: keyword in x
-
-        if df is None:
-            count_before = self.dataFrame["id"].count()
-            self.dataFrame = self.dataFrame[self.dataFrame["text"].apply(contains_key) == False]
-            count_after = self.dataFrame["id"].count()
-        else:
-            count_before = df["id"].count()
-            df = df[df["text"].apply(contains_key) == False]
-            count_after = df["id"].count()
-
-        # return number of removed elements
-        return count_before - count_after
-
-    def get_tweets(self, colname="text"):
-        return list(self.dataFrame[colname])
-
-    def get_dataframe(self):
-        return self.dataFrame
+    def getTweets(self):
+        return self.tweets
