@@ -36,21 +36,28 @@ def count_for_set(df, sentiments_df, keys):
                 df = df.drop(idx)
                 break
 
+def printTweetStats(undistributed_tweets, sentiments_per_day):
+    n_undistributed = len(undistributed_tweets)
+    sentiments_all_time = sentiments_per_day.sum()
+    n_distributed = sentiments_all_time.sum()
+    print("====  Number of undistributed tweets: {}.".format(n_undistributed))
+    print("Number of distributed tweets: {}.".format(n_distributed))
+    print(sentiments_all_time)
+    print(sentiments_per_day)
+
 tweets = TweetStore(data_dir + "May_16.csv")
 df = tweets.getTweets()
-print(df["created_at"])
 idx = sorted(df["date"].unique())
 sentiments_per_day = pd.DataFrame(0, index=idx, columns=sentiments)
-print("====  Total number of tweets to distribute: {}.".format(len(df)))
-print(sentiments_per_day)
+
+printTweetStats(df, sentiments_per_day)
 
 # Remove tweets containing keywords mapped to a fixed sentiment
 count_for_set(df, sentiments_per_day["leave"], keywords["leave"])
 count_for_set(df, sentiments_per_day["undecided"], keywords["undecided"])
 count_for_set(df, sentiments_per_day["stay"], keywords["stay"])
 
-print("==== Size : {} ====".format(len(df.index)))
-print(sentiments_per_day)
+printTweetStats(df, sentiments_per_day)
 
 # Sentiment analysis for remaining tweets
 threshold_leave = -0.00661286
@@ -74,8 +81,7 @@ for day in df["date"].unique():
     sentiments_per_day["stay"][day] += sum(day_df["sentiment"] == "stay")
     sentiments_per_day["undecided"][day] += sum(day_df["sentiment"] == "undecided")
 
-print("====  Total number of tweets to distribute: {}.".format(len(df)))
-print(sentiments_per_day)
+printTweetStats(df, sentiments_per_day)
 
 
 loc = MultipleLocator(base=1.0)
