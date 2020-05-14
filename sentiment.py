@@ -1,15 +1,12 @@
 from __future__ import print_function
 from collections import defaultdict
-print("Starting imports..")
-# Own modules
+import matplotlib.pyplot as plt
+from matplotlib.dates import date2num, DayLocator, DateFormatter
+from matplotlib.ticker import MultipleLocator
+import numpy as np
 from TweetAnalyzer.config import data_dir
 from TweetAnalyzer import SSIXAnalyzer, TweetStore
 
-# Python modules
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.dates import date2num
 
 def dictincr(dictionary, value):
     try:
@@ -110,12 +107,6 @@ for i, idx in enumerate(df.index):
             dictincr(counts_stay, day)
         else:
             dictincr(counts_other, day)
-"""
-counts_stay = np.array(counts_stay.values())
-counts_leave = np.array(counts_leave.values())
-counts_other = np.array(counts_other.values())
-
-"""
 
 print("Dates   : ", df["date"])
 print("==== Leave ====")
@@ -128,35 +119,10 @@ print("==== Stay  ====")
 print("Counts : ", counts_stay)
 print("\n")
 
-from matplotlib.dates import DayLocator, DateFormatter
-
-# Plots
-"""
-#
-# Total count leave / other / stay
-#
-fig = plt.figure(figsize=(15,8))
-ax = plt.axes()
-ax.set_title("Tweet count for leave / other / stay")
-w = 0.2
-ax.bar(np_days, counts_leave, width=w, color="r", label="leave")
-ax.bar(np_days+w, counts_stay, width=w, color="b", label="stay")
-ax.bar(np_days+2*w, counts_other, width=w, color="g", label="other")
-ax.set_xlabel("Dates")
-ax.set_ylabel("Tweet count")
-ax.xaxis_date()
-ax.autoscale(tight=True)
-plt.legend(loc="best")
-plt.savefig("total_daycount.pdf")
-"""
-from matplotlib.ticker import MultipleLocator
 
 loc = MultipleLocator(base=1.0)
 xfmt = DateFormatter('%d %b')
 
-#
-# Total count leave / stay
-#
 fig = plt.figure(figsize=(6,6))
 ax = plt.axes()
 ax.xaxis.set_major_formatter(xfmt)
@@ -170,14 +136,7 @@ y2 = np.array([counts_stay[day] for day in df["date"]])
 ax.bar(np_days+w, y2, width=w, color="b", label="stay")
 ax.set_xlabel("Dates")
 ax.set_ylabel("Tweet count")
-#ax.xaxis_date()
-#ax.autoscale(tight=True)
-#plt.legend(loc="best")
 plt.savefig("total_daycount_ls.pdf")
-
-#
-# Relative count leave / other / stay
-#
 
 all_keys = set(())
 dictionaries = [counts_leave, counts_stay, counts_other]
@@ -211,27 +170,4 @@ ax.bar(np_days, counts_stay_normalised, width=w, bottom=counts_leave_normalised,
 ax.bar(np_days, counts_other_normalised, width=w, bottom=1-counts_other_normalised, color="g", label="other")
 ax.set_xlabel("Dates")
 ax.set_ylabel("Tweet count")
-#plt.legend(loc="best")
 plt.savefig("relative_daycount.pdf")
-"""
-#
-# Relative count leave / stay
-#
-tot = counts_leave + counts_stay
-tot = np.max(np.vstack((tot, np.ones_like(tot))), axis=0)
-counts_leave_normalised = 1.0*counts_leave/tot
-counts_stay_normalised = 1.0*counts_stay/tot
-
-fig = plt.figure(figsize=(15,8))
-ax = plt.axes()
-ax.set_title("Tweet count for leave / stay")
-w = 0.8
-ax.bar(np_days, counts_leave_normalised, width=w, color="r", label="leave")
-ax.bar(np_days, counts_stay_normalised, width=w, bottom=counts_leave_normalised, color="b", label="stay")
-ax.set_xlabel("Dates")
-ax.set_ylabel("Tweet count")
-ax.xaxis_date()
-ax.autoscale(tight=True)
-plt.legend(loc="best")
-plt.savefig("relative_daycount_ls.pdf")
-"""
