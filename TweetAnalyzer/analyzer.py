@@ -47,10 +47,7 @@ class SSIXAnalyzer(Analyzer):
     weight = {}
     common_wordlist = analyzer_data / "common_words.txt"
 
-    def remove_common(self, dictionary):
-        """
-            Remove common words from given dictionary
-        """
+    def removeCommonWords(self, dictionary):
         filename = self.data_dir + self.common_wordlist
         with open(filename) as f:
             for line in f.readlines():
@@ -61,10 +58,6 @@ class SSIXAnalyzer(Analyzer):
                     pass
 
     def add_text_to_dict(self, dictionary, text):
-        """
-            Add all words in text to dictionary by increasing value of the dictionary by
-            one, using the word as key
-        """
         wordlist = self.getValidWords(text)
         for word in wordlist:
             try:
@@ -72,10 +65,7 @@ class SSIXAnalyzer(Analyzer):
             except:
                 dictionary[word] = 1
 
-    def normalize(self, dictionary):
-        """
-            Normalize a dictionary, such that the sum of all values is 1
-        """
+    def normalizeToOne(self, dictionary):
         factor = 1./np.sum(dictionary.values())
         for key in dictionary:
             dictionary[key] = dictionary[key]*factor
@@ -84,7 +74,6 @@ class SSIXAnalyzer(Analyzer):
 
         self.data_dir = data_dir
 
-        # try to load weight dict from file, if not possible re-compute it
         try:
             print("Trying to load weight dict from " + data_dir + "weight.json..")
             self.weight = json.load(open(data_dir+"weight.json"))
@@ -92,15 +81,9 @@ class SSIXAnalyzer(Analyzer):
         except:
             print("Weight dict not found in weight.json, recomputing it..")
 
-        # get ssix tweets
         with open(data_dir + ssix_tweets) as handler:
             tweets_csv = handler.read()
         tweets_panda = pd.read_csv(StringIO.StringIO(tweets_csv))
-
-        # tokenize
-        #tweets_panda["tokenized"] = ""
-        #for i, raw_text in enumerate(tweets_panda["text"]):
-        #    tweets_panda.set_value(i, "tokenized", nltk.word_tokenize(unicode(raw_text, "utf-8")))
 
         print("Initializing dictionaries from SSIX Brexit Gold Standard..")
         with open(data_dir + ssix_data) as handler:
@@ -124,20 +107,16 @@ class SSIXAnalyzer(Analyzer):
                     self.add_text_to_dict(undecided, text)
 
         print("Computing weight dictionary..")
-        # list of dictionaries for easy handling
         dictionaries = [leave, stay, undecided]
 
-        # remove common words from dictionaries and normalize
         for dictionary in dictionaries:
-            self.remove_common(dictionary)
-            self.normalize(dictionary)
+            self.removeCommonWords(dictionary)
+            self.normalizeToOne(dictionary)
 
-        # get a set of all keys
         all_keys = leave.keys()
         all_keys.extend(stay.keys())
         all_keys.extend(undecided.keys())
 
-        # compute weight dictionary
         for key in all_keys:
             occurences = np.zeros(3)
             for i, dictionary in enumerate(dictionaries):
@@ -157,23 +136,11 @@ class SSIXAnalyzer(Analyzer):
 
         print("Done.")
 
-    def weight_function(self, a, b, c):
-        """
-            Weight function
-              a (float) : Number of occurences in leave
-              b (float) : Number of occurences in stay
-              c (float) : Number of occurences in undecided
-        """
-        return b - a
+    def weight_function(self, n_leave, n_stay, n_undecided):
+        return n_stay - n_leave
         #return (b**2 - a**2)/np.log(np.e - 1 + a + b + c)
 
     def judge_text(self, text):
-        """
-            Compute sentiment of given string
-              text (string) : input string
-            Returns:
-              val (float) : sentiment of string
-        """
         wordlist = self.getValidWords(text)
         val = 0
         for word in wordlist:
@@ -185,9 +152,6 @@ class SSIXAnalyzer(Analyzer):
 
 
     def getValue(self, word):
-        """
-            Get value of a single word
-        """
         wordlist = self.getValidWords(word)
         if len(wordlist) > 1:
             raise ValueError("getValue takes only a single word!")
@@ -198,12 +162,6 @@ class SSIXAnalyzer(Analyzer):
         return val
 
     def getValues(self, textlist):
-        """
-            Get values of a list of strings
-              textlist (list) : list of strings, input sentences
-            Returns:
-              vals (list) : list of floats, sentiment for each input sentence
-        """
         vals = []
         for text in textlist:
             vals.append(self.judge_text(text))
@@ -225,21 +183,12 @@ class VaderAnalyzer(Analyzer):
         pass
 
     def getValue(self, word):
-        """
-            Get value of a single word
-        """
         wordlist = self.getValidWords(word)
         if len(wordlist) > 1:
             raise ValueError("getValue takes only a single word!")
         return self.analyzer.polarity_scores(wordlist[0])['compound']
 
     def getValues(self, textlist):
-        """
-            Get values of a list of strings
-              textlist (list) : list of strings, input sentences
-            Returns:
-              vals (list) : list of floats, sentiment for each input sentence
-        """
         vals = []
         for text in textlist:
             vals.append(self.analyzer.polarity_scores(text)['compound'])
