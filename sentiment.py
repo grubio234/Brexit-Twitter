@@ -68,17 +68,16 @@ def categorizeByScore(tweets, sentiments_per_day, score_function, thresholds):
             sentiments_per_day[s][day] += sum(day_tweets["sentiment"] == s)
 
 
-def sentimentAnalysis(tweet_files=None, save_folder="./"):
-    def setupDataFrames(tweet_files):
-        if tweet_files is None:
+def sentimentAnalysis(tweets=None, save_folder="./"):
+    def setupDataFrames(tweets):
+        if tweets is None:
             tweet_files = [data_dir + "May_16.csv"]
-
-        tweets = TweetStore(tweet_files).getTweets()
+            tweets = TweetStore(tweet_files).getTweets()
         days = sorted(tweets["date"].unique())
         sentiments_per_day = pd.DataFrame(0, index=days, columns=sentiments)
         return tweets, sentiments_per_day
 
-    tweets, sentiments_per_day = setupDataFrames(tweet_files)
+    tweets, sentiments_per_day = setupDataFrames(tweets)
 
     print("\n==== 1.) Categorize tweets by keyword. ====")
     keywords = {}

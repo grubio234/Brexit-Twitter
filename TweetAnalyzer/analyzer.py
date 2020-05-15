@@ -36,7 +36,6 @@ def vaderLexiconFile(directory=analyzer_data):
     return str(vader_lexicon)
 
 class VaderAnalyzer(Analyzer):
-
     analyzer = SentimentIntensityAnalyzer(vaderLexiconFile())
 
     def getTweetScore(self, tweet_text):

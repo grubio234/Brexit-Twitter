@@ -64,17 +64,18 @@ def getWordQuota(df, sentiment):
 def getWordQuotaPerSentiment():
     ssix_data = getSSIXData()
     word_quota_per_sentiment = {k: {} for k in sentiments}
-    for sentiment, word_quota in word_quota_per_sentiment.items():
+    for sentiment in word_quota_per_sentiment:
         word_quota = getWordQuota(ssix_data, sentiment)
+        word_quota_per_sentiment[sentiment] = word_quota
     return word_quota_per_sentiment
 
-def getWordScore(word_quota_per_sentiment):
+def getWordScore(word_quota_per_sentiment, score_function):
     union_of_words = set().union(*word_quota_per_sentiment.values())
     word_score = {}
     for word in union_of_words:
         quota_per_sentiment = []
         for sentiment in sentiments:
-            quota = word_quota_per_sentiment[sentiment]
+            quota = word_quota_per_sentiment[sentiment][word]
             quota_per_sentiment.append(quota)
         score = score_function(*quota_per_sentiment)
         word_score[word] = score
@@ -87,5 +88,5 @@ def makeWordScores(score_function=None):
         score_function =  lambda n_leave, n_stay, n_undecided: n_stay - n_leave
 
     word_quota_per_sentiment = getWordQuotaPerSentiment()
-    word_score = getWordScore(word_quota_per_sentiment)
+    word_score = getWordScore(word_quota_per_sentiment, score_function)
     return word_score

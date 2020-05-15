@@ -32,26 +32,15 @@ def dailyCountsPerGroup(tweets, keyword_groups, timezones=None):
         keyword_counts[name] = daily_counts
     return keyword_counts
 
-def run_stacked(tweets, keywords, timezones, colors):
-    keywords = ["strongerin", "ukineu", "ukip", "leave", "remain", "euref"]
-    colors = ["b", "g", "r", "m", "c", "y", "k"]
-    timezones = {
-        "London": ["London"],
-        "US": ["US"],
-        "Edinburgh": ["Edinburgh"],
-        "Dublin": ["Dublin"],
-        "Europe": timeZonesEurope(),
-    }
-
 def timeZonesEurope():
-    return ["Amsterdam", "Andorra", "Athens", "Belfast", "Belgrade", "Berlin", "Bern",
-      "Brussels", "Bucharest", "Budapest", "Copenhagen", "Dublin", "Edinburgh",
-      "Helsinki", "Istanbul", "Kaliningrad", "Kiev", "Lisbon", "London", "Luxembourg",
-      "Madrid", "Malta", "Minsk", "Moscow", "Oslo", "Paris", "Prague", "Riga",
-      "Rome", "Sarajevo", "Skopje", "Sofia", "Sofia", "Stockholm", "Tallinn",
-      "Vienna", "Warsaw", "Zurich"]
+    return ["Amsterdam", "Andorra", "Athens", "Belfast", "Belgrade", "Berlin",
+        "Bern", "Brussels", "Bucharest", "Budapest", "Copenhagen", "Dublin",
+        "Edinburgh", "Helsinki", "Istanbul", "Kaliningrad", "Kiev", "Lisbon",
+        "London", "Luxembourg", "Madrid", "Malta", "Minsk", "Moscow", "Oslo",
+        "Paris", "Prague", "Riga", "Rome", "Sarajevo", "Skopje",
+        "Sofia", "Stockholm", "Tallinn", "Vienna", "Warsaw", "Zurich"]
 
-def run_stacked(tweets):
+def keywordSharePerTimezone(tweets, save_folder="./"):
     keyword_list = ["strongerin", "ukineu", "ukip", "leave", "remain", "euref"]
     keywords = {kw: kw for kw in keyword_list}
     colors = ["b", "g", "r", "m", "c", "y", "k"]
@@ -63,31 +52,28 @@ def run_stacked(tweets):
         "Europe": timeZonesEurope(),
     }
 
+    for name, zones in timezones.items():
+        df = dailyCountsPerGroup(tweets, keywords, zones)
 
-    for name, timezones in timezones.items():
         title = "Timezone: {}".format(name)
         save_as = "frequency_stacked_{}.pdf".format(name)
-        df = dailyCountsPerGroup(tweets, keywords, timezones)
-
         keywordFrequencyPlot(df, title, save_as, colors, mode="stacked")
 
-def run_brexit(tweets):
+def brexitMentionFrequencyInDataset(tweets, save_folder="./"):
     keywords = {
         "All tweets": None,
         "Matching 'brexit'": "brexit",
     }
     colors = ["b", "r"]
 
-    save_as = "frequency_brexit.pdf"
-    title = "Brexit-related tweet count"
-
     df = dailyCountsPerGroup(tweets, keywords)
 
+    title = "Brexit-related tweet count"
+    save_as = "frequency_brexit.pdf"
     keywordFrequencyPlot(df, title, save_as, colors)
 
 if __name__ == "__main__":
-    tweet_files = data_dir + "april_13_15.csv"
     tweet_files = data_dir + "May_16.csv"
     tweets = TweetStore(tweet_files).getTweets()
-    run_brexit(tweets)
-    run_stacked(tweets)
+    brexitMentionFrequencyInDataset(tweets)
+    keywordSharePerTimezone(tweets)
