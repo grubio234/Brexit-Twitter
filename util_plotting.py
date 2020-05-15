@@ -13,23 +13,23 @@ def dailySentimentPlots(daily_sent, save_path="./"):
         ax.set_xlabel("Dates")
         ax.set_ylabel("Tweet count")
 
-        return ax
+        return fig, ax
 
     num_days = date2num(daily_sent.index)
 
-    ax = plotTemplate()
+    fig, ax = plotTemplate()
     w = 0.2
     ax.bar(num_days,   daily_sent["leave"], width=w, color="r", label="leave")
     ax.bar(num_days+w, daily_sent["stay"],  width=w, color="b", label="stay")
     ax.set_title("Tweet count for leave / stay")
-    plt.savefig(save_path+"total_daycount_ls.pdf")
+    fig.savefig(save_path+"total_daycount_ls.pdf")
 
     daily_rel = daily_sent.copy()
     daily_rel["total"] = daily_rel.sum(axis=1)
     daily_rel["total"] = daily_rel["total"].replace(0, 1).astype(float)
     daily_rel = daily_rel.div(daily_rel["total"], axis=0)
 
-    ax = plotTemplate()
+    fig, ax = plotTemplate()
     w = 0.6
     ax.bar(num_days, daily_rel["leave"],     label="leave", width=w, color="r")
     ax.bar(num_days, daily_rel["stay"],      label="stay",  width=w, color="b",
@@ -37,4 +37,4 @@ def dailySentimentPlots(daily_sent, save_path="./"):
     ax.bar(num_days, daily_rel["undecided"], label="other", width=w, color="g",
             bottom=1-daily_rel["undecided"])
     ax.set_title("Tweet count for leave / other / stay")
-    plt.savefig(save_path+"relative_daycount.pdf")
+    fig.savefig(save_path+"relative_daycount.pdf")
