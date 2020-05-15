@@ -20,7 +20,7 @@ def simpleTest():
     print(vader.getTweetScores(tweets))
 
 def testTimeLine():
-    runpy.run_path("plot_timeline.py")
+    runpy.run_path("keyword_frequency.py")
 
 if __name__ == "__main__":
     save_folder = "./"
