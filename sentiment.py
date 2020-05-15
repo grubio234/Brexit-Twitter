@@ -17,24 +17,33 @@ keywords["leave"] = ["ukip", "no2eu", "britainout", "voteleave", "leaveeu"]
 keywords["undecided"] = ["euref", "eureferendum", "takecontrol"]
 keywords["stay"] = ["#strongerin", "remain", "ukineu"]
 
+def categorizeByKeywords(df, sentiments_df, keywords):
+    def categorizeByKeywordsAlgorithm(df, sentiments_df, keywords):
+        has_a_keyword = pd.Series(False, index=df.index)
+        for keyword in keywords:
+            has_this_keyword = df["text"].apply(lambda text: keyword in text)
+            has_a_keyword = has_a_keyword | has_this_keyword
+        for day in sentiments_per_day.index:
+            is_today = df["date"] == day
+            found_today = has_a_keyword & is_today
+            sentiments_df[day] += sum(found_today)
+        print(sum(has_a_keyword))
+        return df[~has_a_keyword]
 
-def count_for_set(df, sentiments_df, keys):
+    def nWithAndNoCategory(df, sentiments_df):
+        n_wo_category = len(df)
+        n_with_category = sentiments_df.sum(axis=0)
+        return n_with_category, n_wo_category
 
-    # distinct days
-    counts = defaultdict(int)
-
-    for i, idx in enumerate(df.index):
-        if i % 5000 == 0:
-            print("Processed {} tweets".format(i))
-
-        tweet = df.loc[idx, "text"]
-        day = df["date"][idx]
-        for key in keys:
-            if key in tweet:
-                sentiments_df.loc[day] += 1
-
-                df = df.drop(idx)
-                break
+    n = {}
+    n["oldWCat"], n["oldNoCat"] = nWithAndNoCategory(df, sentiments_df)
+    df = categorizeByKeysAlgorithm(df, sentiments_df, keys)
+    n["newWCat"], n["newNoCat"] = nWithAndNoCategory(df, sentiments_df)
+    if n["oldWCat"] + n["oldNoCat"] != n["newWCat"] + n["newNoCat"]:
+        raise Exception("Some events were lost while performing the "
+            "categorization. {oldWCat}+{oldNoCat} != {newWCat}+{newNoCat}"
+            "".format(**n))
+    return df
 
 def printTweetStats(undistributed_tweets, sentiments_per_day):
     n_undistributed = len(undistributed_tweets)
@@ -53,9 +62,9 @@ sentiments_per_day = pd.DataFrame(0, index=idx, columns=sentiments)
 printTweetStats(df, sentiments_per_day)
 
 # Remove tweets containing keywords mapped to a fixed sentiment
-count_for_set(df, sentiments_per_day["leave"], keywords["leave"])
-count_for_set(df, sentiments_per_day["undecided"], keywords["undecided"])
-count_for_set(df, sentiments_per_day["stay"], keywords["stay"])
+df = categorizeByKeywords(df, sentiments_per_day["leave"], keywords["leave"])
+df = categorizeByKeywords(df, sentiments_per_day["undecided"], keywords["undecided"])
+df = categorizeByKeywords(df, sentiments_per_day["stay"], keywords["stay"])
 
 printTweetStats(df, sentiments_per_day)
 
@@ -71,9 +80,6 @@ def scoreToSentiment(score):
         return "undecided"
 df["score"] = df["text"].apply(ssix.getTweetScore)
 df["sentiment"] = df["score"].apply(scoreToSentiment)
-#df["sentiment"] = "undecided"
-#df["sentiment"][df["score"] <= threshold_leave] = "leave"
-#df["sentiment"][df["score"] >= threshold_stay] = "stay"
 
 for day in df["date"].unique():
     day_df = df[df["date"] == day]
