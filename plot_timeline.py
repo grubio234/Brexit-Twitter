@@ -6,108 +6,87 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import datetime as dt
 from matplotlib.dates import date2num, DayLocator, DateFormatter
-from matplotlib.ticker import MultipleLocator
 
-def get_timeline_count(tweets_file, keywords=None, timezones=None):
-    # get dataframe
-    l = TweetStore(tweets_file)
-    data = l.getTweets()
-
-    def valid_keyword(x):
-        for keyword in keywords:
-            if keyword in x:
+def dailyCountsForKeywordGroup(tweets, keyword_group, timezones=None):
+    def hasKeyword(text):
+        for keyword in keyword_group:
+            if keyword in text:
                 return True
         return False
-
-    def valid_timezone(t):
+    def isInTimezone(t):
         for timezone in timezones:
             if timezone in t:
                 return True
         return False
 
+    mask = pd.Series(True, index=tweets.index)
     if not timezones is None:
-        data = data[data["user_time_zone"].apply(valid_timezone) == True]
-    if not keywords is None:
-        data = data[data["text"].apply(valid_keyword) == True]
+        mask = tweets["user_time_zone"].apply(isInTimezone) & mask
+    if not keyword_group is None:
+        mask = tweets["text"].apply(hasKeyword) & mask
 
-    per_day = data["date"].value_counts()
+    per_day = tweets["date"][mask].value_counts()
     return per_day
 
-def plot_timelines(ax, df, colors, mode=None):
+def dailyCountsPerGroup(tweets, keyword_groups, timezones=None):
+    keyword_counts = pd.DataFrame()
+    for name, kw_group in keyword_groups.items():
+        daily_counts = dailyCountsForKeywordGroup(tweets, kw_group, timezones)
+        keyword_counts[name] = daily_counts
+    return keyword_counts
+
+
+
+
+def emptyDataFramePlot(title, save_as):
+    fig = plt.figure(figsize=(6,6))
+    ax = fig.add_subplot(1, 1, 1)
+    plt.xticks([])
+    plt.yticks([])
+    ax.set_title(title)
+    fig.text(0.5, 0.5, "Empty DataFrame", ha='center', va='center', size=24, alpha=.5)
+    fig.savefig(save_as)
+
+def keywordFrequencyPlot(df, title, save_as, colors, mode=None):
     if df.empty:
-        raise Exception("Empty dfs can not be handled with this function.")
-
-    bar_width = 0.8
-    xfmt = DateFormatter('%d %b')
-    ax.xaxis.set_major_formatter(xfmt)
-    ax.xaxis.set_major_locator(MultipleLocator(base=1.0))
-    N = len(df.columns)
-
-    ybottom = pd.Series(0, index=df.index)
-    days = date2num(df.index)
-    for i, col in enumerate(df.columns):
-        if mode == "stacked":
-            ax.bar(days, df[col], bottom=ybottom, width=bar_width, color=colors[i], label=col)
-            ybottom += df[col]
-            print("Plotted ", col)
-
-        else:
-            xk = days + bar_width/N*(i - N/2 - 1)
-            ax.bar(xk, df[col], width=bar_width, color=colors[i], label=col)
-        #ax.xaxis_date()
-        #ax.autoscale(tight=True)
-
-def foreach_keyword(tweets_csv, keywords, timezones=None):
-    """
-        Filter for each keyword in keywords and matching timezones
-    """
-    x, y, labels = [], [], []
-    df = pd.DataFrame()
-    for keyword in keywords:
-        df[keyword] = get_timeline_count(tweets_csv, [keyword], timezones)
-        #if keyword == "":
-        #    xn, yn = get_timeline_count(tweets_csv, timezones)
-        #    labels.append("All tweets")
-        #else:
-        #    xn, yn = get_timeline_count(tweets_csv, [keyword], timezones)
-        #    labels.append("Matching '{}'".format(keyword))
-        #x.append(xn)
-        #y.append(yn)
-    #return x, y, labels
-    return df
-
-
-def run_experiment(tweets_csv, keywords, timezoneslist, titles, colors):
-
-    for timezones, title in zip(timezoneslist, titles):
+        emptyDataFramePlot(title, save_as)
+    else:
         fig = plt.figure(figsize=(6,6))
-        df = foreach_keyword(tweets_csv, keywords, timezones)
-        if df.empty:
-            print("FIXME: Empty DataFrame handling: {}.".format(title)) # TODO
-            plt.xticks([])
-            plt.yticks([])
-            fig.text(0.5, 0.5, "{} {} empty DataFrame".format(timezones[0], title), ha='center', va='center',
-                size=24, alpha=.5)
-        else:
-            loc = MultipleLocator(base=5.0)
-            loc.MAXTICKS = 10000
-            xfmt = DateFormatter('%d %b')
-            ax = fig.add_subplot(1, 1, 1)
-            ax.xaxis.set_major_formatter(xfmt)
-            ax.xaxis.set_major_locator(loc)
-            box = ax.get_position()
-            #ax.set_position([box.x0, box.y0, box.width*0.85, box.height])
-            if len(timezones) == 1 and timezones[0] == "":
-                ax.set_title("All timezones")
+        ax = fig.add_subplot(1, 1, 1)
+        ax.legend(loc="best")
+        ax.set_title(title)
+        daily_width = 0.8
+        xfmt = DateFormatter('%d %b')
+        ax.xaxis.set_major_formatter(xfmt)
+        ax.set_xlabel("Date")
+        ax.set_ylabel("Tweet count")
+        N = len(df.columns)
+
+        ybottom = pd.Series(0, index=df.index)
+        days = date2num(df.index)
+        for i, col in enumerate(df.columns):
+            if mode == "stacked":
+                ax.bar(days, df[col], bottom=ybottom, width=daily_width, color=colors[i], label=col)
+                ybottom += df[col]
+                print("Plotted ", col)
+
             else:
-                ax.set_title("Timezone: {}".format(title))
-            plot_timelines(ax, df, colors, mode="stacked")
-            ax.set_xlabel("Date")
-            ax.set_ylabel("Tweet count")
-            ax.xaxis_date()
-            ax.autoscale()
-        #plt.legend(loc="best", bbox_to_anchor=(1, 0.6))
-        fig.savefig("frequency_stacked_{}.pdf".format(title))
+                bar_width = daily_width/N
+                xk = days + bar_width*(i - N/2 - 1)
+                ax.bar(xk, df[col], width=bar_width, color=colors[i], label=col)
+        fig.savefig(save_as)
+
+
+def run_stacked(tweets, keywords, timezones, colors):
+    keywords = ["strongerin", "ukineu", "ukip", "leave", "remain", "euref"]
+    colors = ["b", "g", "r", "m", "c", "y", "k"]
+    timezones = {
+        "London": ["London"],
+        "US": ["US"],
+        "Edinburgh": ["Edinburgh"],
+        "Dublin": ["Dublin"],
+        "Europe": timeZonesEurope(),
+    }
 
 def timeZonesEurope():
     return ["Amsterdam", "Andorra", "Athens", "Belfast", "Belgrade", "Berlin", "Bern",
@@ -117,37 +96,43 @@ def timeZonesEurope():
       "Rome", "Sarajevo", "Skopje", "Sofia", "Sofia", "Stockholm", "Tallinn",
       "Vienna", "Warsaw", "Zurich"]
 
-def run_stacked():
-    tweets_csv = data_dir + "april_13_15.csv"
-    tweets_csv = data_dir + "May_16.csv"
-    keywords = ["strongerin", "ukineu", "ukip", "leave", "remain", "euref"]
-    timezones = [ ["London"],
-                  ["US"],
-                  ["Edinburgh"],
-                  ["Dublin"] ]
-    titles = ["London", "US", "Edinburgh", "Dublin"]
+def run_stacked(tweets):
+    keyword_list = ["strongerin", "ukineu", "ukip", "leave", "remain", "euref"]
+    keywords = {kw: kw for kw in keyword_list}
     colors = ["b", "g", "r", "m", "c", "y", "k"]
+    timezones = {
+        "London": ["London"],
+        "US": ["US"],
+        "Edinburgh": ["Edinburgh"],
+        "Dublin": ["Dublin"],
+        "Europe": timeZonesEurope(),
+    }
 
-    # Create stacked plots
-    run_experiment(tweets_csv, keywords, timezones, titles, colors)
 
-def run_brexit():
-    tweets_csv = data_dir + "april_13_15.csv"
-    # Create plot for total activity
-    keywords = ["", "brexit"]
+    for name, timezones in timezones.items():
+        title = "Timezone: {}".format(name)
+        save_as = "frequency_stacked_{}.pdf".format(name)
+        df = dailyCountsPerGroup(tweets, keywords, timezones)
+
+        keywordFrequencyPlot(df, title, save_as, colors, mode="stacked")
+
+def run_brexit(tweets):
+    keywords = {
+        "All tweets": None,
+        "Matching 'brexit'": "brexit",
+    }
     colors = ["b", "r"]
 
-    fig = plt.figure(figsize=(6,6))
-    ax = plt.axes()
-    ax.set_title("Brexit-related tweet count")
-    df = foreach_keyword(tweets_csv, keywords)
-    plot_timelines(ax, df, colors)
+    save_as = "frequency_brexit.pdf"
+    title = "Brexit-related tweet count"
 
-    ax.set_xlabel("Date")
-    ax.set_ylabel("Tweet count")
-    #plt.legend(loc="best")
-    plt.savefig("frequency_brexit.pdf")
+    df = dailyCountsPerGroup(tweets, keywords)
+
+    keywordFrequencyPlot(df, title, save_as, colors)
 
 if __name__ == "__main__":
-    #run_brexit()
-    run_stacked()
+    tweet_files = data_dir + "april_13_15.csv"
+    tweet_files = data_dir + "May_16.csv"
+    tweets = TweetStore(tweet_files).getTweets()
+    run_brexit(tweets)
+    run_stacked(tweets)

@@ -1,15 +1,12 @@
 import matplotlib.pyplot as plt
 from matplotlib.dates import date2num, DateFormatter
-from matplotlib.ticker import MultipleLocator
 
 def dailySentimentPlots(daily_sent, save_path="./"):
     def plotTemplate():
-        loc = MultipleLocator(base=1.0)
         xfmt = DateFormatter('%d %b')
         fig = plt.figure(figsize=(6,6))
         ax = fig.add_subplot(1, 1, 1)
         ax.xaxis.set_major_formatter(xfmt)
-        ax.xaxis.set_major_locator(loc)
         ax.set_xlabel("Dates")
         ax.set_ylabel("Tweet count")
 
