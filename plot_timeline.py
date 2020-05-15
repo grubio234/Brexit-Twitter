@@ -1,11 +1,8 @@
 from __future__ import print_function
+import pandas as pd
 from TweetAnalyzer.config import data_dir
 from TweetAnalyzer import SSIXAnalyzer, TweetStore
-import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-import datetime as dt
-from matplotlib.dates import date2num, DayLocator, DateFormatter
+from util_plotting import keywordFrequencyPlot
 
 def dailyCountsForKeywordGroup(tweets, keyword_group, timezones=None):
     def hasKeyword(text):
@@ -34,48 +31,6 @@ def dailyCountsPerGroup(tweets, keyword_groups, timezones=None):
         daily_counts = dailyCountsForKeywordGroup(tweets, kw_group, timezones)
         keyword_counts[name] = daily_counts
     return keyword_counts
-
-
-
-
-def emptyDataFramePlot(title, save_as):
-    fig = plt.figure(figsize=(6,6))
-    ax = fig.add_subplot(1, 1, 1)
-    plt.xticks([])
-    plt.yticks([])
-    ax.set_title(title)
-    fig.text(0.5, 0.5, "Empty DataFrame", ha='center', va='center', size=24, alpha=.5)
-    fig.savefig(save_as)
-
-def keywordFrequencyPlot(df, title, save_as, colors, mode=None):
-    if df.empty:
-        emptyDataFramePlot(title, save_as)
-    else:
-        fig = plt.figure(figsize=(6,6))
-        ax = fig.add_subplot(1, 1, 1)
-        ax.legend(loc="best")
-        ax.set_title(title)
-        daily_width = 0.8
-        xfmt = DateFormatter('%d %b')
-        ax.xaxis.set_major_formatter(xfmt)
-        ax.set_xlabel("Date")
-        ax.set_ylabel("Tweet count")
-        N = len(df.columns)
-
-        ybottom = pd.Series(0, index=df.index)
-        days = date2num(df.index)
-        for i, col in enumerate(df.columns):
-            if mode == "stacked":
-                ax.bar(days, df[col], bottom=ybottom, width=daily_width, color=colors[i], label=col)
-                ybottom += df[col]
-                print("Plotted ", col)
-
-            else:
-                bar_width = daily_width/N
-                xk = days + bar_width*(i - N/2 - 1)
-                ax.bar(xk, df[col], width=bar_width, color=colors[i], label=col)
-        fig.savefig(save_as)
-
 
 def run_stacked(tweets, keywords, timezones, colors):
     keywords = ["strongerin", "ukineu", "ukip", "leave", "remain", "euref"]

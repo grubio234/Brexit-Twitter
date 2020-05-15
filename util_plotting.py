@@ -35,3 +35,38 @@ def dailySentimentPlots(daily_sent, save_path="./"):
             bottom=1-daily_rel["undecided"])
     ax.set_title("Tweet count for leave / other / stay")
     fig.savefig(save_path+"relative_daycount.pdf")
+
+def keywordFrequencyPlot(df, title, save_as, colors, mode=None):
+    def emptyDataFramePlot(title, save_as):
+        fig = plt.figure(figsize=(6,6))
+        ax = fig.add_subplot(1, 1, 1)
+        plt.xticks([])
+        plt.yticks([])
+        ax.set_title(title)
+        fig.text(0.5, 0.5, "Empty DataFrame", ha='center', va='center', size=24, alpha=.5)
+        fig.savefig(save_as)
+    if df.empty:
+        emptyDataFramePlot(title, save_as)
+    else:
+        fig = plt.figure(figsize=(6,6))
+        ax = fig.add_subplot(1, 1, 1)
+        ax.set_title(title)
+        daily_width = 0.8
+        xfmt = DateFormatter('%d %b')
+        ax.xaxis.set_major_formatter(xfmt)
+        ax.set_xlabel("Date")
+        ax.set_ylabel("Tweet count")
+        N = len(df.columns)
+
+        y_bottom = None
+        days = date2num(df.index)
+        for i, col in enumerate(df.columns):
+            if mode == "stacked":
+                ax.bar(days, df[col], bottom=y_bottom, width=daily_width, color=colors[i], label=col)
+                y_bottom = y_bottom + df[col] if y_bottom is not None else df[col]
+            else:
+                bar_width = daily_width/N
+                xk = days + bar_width*(i - N/2 - 1)
+                ax.bar(xk, df[col], width=bar_width, color=colors[i], label=col)
+        ax.legend(loc="best")
+        fig.savefig(save_as)
