@@ -8,48 +8,47 @@ import pandas as pd
 from TweetAnalyzer.config import data_dir
 from TweetAnalyzer import SSIXAnalyzer, TweetStore, sentiments
 
-print("Starting program..")
+def categorizeByKeywords(tweets, sentiment_counts, keywords):
+    def perSentiment(tweets, sentiment_counts, keywords):
+        def perSentimentAlgo(tweets, sentiment_counts, keywords):
+            has_a_keyword = pd.Series(False, index=tweets.index)
+            for keyword in keywords:
+                has_this_kw = tweets["text"].apply(lambda text: keyword in text)
+                has_a_keyword = has_a_keyword | has_this_kw
+            for day in sentiments_per_day.index:
+                is_today = tweets["date"] == day
+                found_today = has_a_keyword & is_today
+                sentiment_counts[day] += sum(found_today)
+            return tweets[~has_a_keyword]
 
-ssix = SSIXAnalyzer(data_dir)
+        def nWithAndNoCat(uncategorized, sentiment_counts):
+            n_wo_category = len(uncategorized)
+            n_with_category = sentiment_counts.sum(axis=0)
+            return n_with_category, n_wo_category
 
-keywords = {}
-keywords["leave"] = ["ukip", "no2eu", "britainout", "voteleave", "leaveeu"]
-keywords["undecided"] = ["euref", "eureferendum", "takecontrol"]
-keywords["stay"] = ["#strongerin", "remain", "ukineu"]
+        n = {}
+        n["oldWCat"], n["oldNoCat"] = nWithAndNoCat(tweets, sentiment_counts)
+        remaining_tweets = perSentimentAlgo(tweets, sentiment_counts, keywords)
+        w_cat, no_cat = nWithAndNoCat(remaining_tweets, sentiment_counts)
 
-def categorizeByKeywords(df, sentiments_df, keywords):
-    def categorizeByKeywordsAlgorithm(df, sentiments_df, keywords):
-        has_a_keyword = pd.Series(False, index=df.index)
-        for keyword in keywords:
-            has_this_keyword = df["text"].apply(lambda text: keyword in text)
-            has_a_keyword = has_a_keyword | has_this_keyword
-        for day in sentiments_per_day.index:
-            is_today = df["date"] == day
-            found_today = has_a_keyword & is_today
-            sentiments_df[day] += sum(found_today)
-        print(sum(has_a_keyword))
-        return df[~has_a_keyword]
+        n["newWCat"], n["newNoCat"] = w_cat, no_cat
+        if n["oldWCat"] + n["oldNoCat"] != n["newWCat"] + n["newNoCat"]:
+            raise Exception("Some events were lost while performing the "
+                "categorization. {oldWCat}+{oldNoCat} != {newWCat}+{newNoCat}"
+                "".format(**n))
+        return remaining_tweets
 
-    def nWithAndNoCategory(df, sentiments_df):
-        n_wo_category = len(df)
-        n_with_category = sentiments_df.sum(axis=0)
-        return n_with_category, n_wo_category
-
-    n = {}
-    n["oldWCat"], n["oldNoCat"] = nWithAndNoCategory(df, sentiments_df)
-    df = categorizeByKeysAlgorithm(df, sentiments_df, keys)
-    n["newWCat"], n["newNoCat"] = nWithAndNoCategory(df, sentiments_df)
-    if n["oldWCat"] + n["oldNoCat"] != n["newWCat"] + n["newNoCat"]:
-        raise Exception("Some events were lost while performing the "
-            "categorization. {oldWCat}+{oldNoCat} != {newWCat}+{newNoCat}"
-            "".format(**n))
-    return df
+    remaining_tweets = tweets.copy()
+    for sentiment in sentiments:
+        remaining_tweets = perSentiment(remaining_tweets,
+                            sentiment_counts[sentiment], keywords[sentiment])
+    return remaining_tweets
 
 def printTweetStats(undistributed_tweets, sentiments_per_day):
     n_undistributed = len(undistributed_tweets)
     sentiments_all_time = sentiments_per_day.sum()
     n_distributed = sentiments_all_time.sum()
-    print("====  Number of undistributed tweets: {}.".format(n_undistributed))
+    print("Number of undistributed tweets: {}.".format(n_undistributed))
     print("Number of distributed tweets: {}.".format(n_distributed))
     print(sentiments_all_time)
     print(sentiments_per_day)
@@ -59,15 +58,16 @@ df = tweets.getTweets()
 idx = sorted(df["date"].unique())
 sentiments_per_day = pd.DataFrame(0, index=idx, columns=sentiments)
 
+keywords = {}
+keywords["leave"]     = ["ukip", "no2eu", "britainout", "voteleave", "leaveeu"]
+keywords["undecided"] = ["euref", "eureferendum", "takecontrol"]
+keywords["stay"]      = ["#strongerin", "remain", "ukineu"]
+
+print("\n==== 1.) Categorize tweets by keyword. ====")
+df = categorizeByKeywords(df, sentiments_per_day, keywords)
 printTweetStats(df, sentiments_per_day)
 
-# Remove tweets containing keywords mapped to a fixed sentiment
-df = categorizeByKeywords(df, sentiments_per_day["leave"], keywords["leave"])
-df = categorizeByKeywords(df, sentiments_per_day["undecided"], keywords["undecided"])
-df = categorizeByKeywords(df, sentiments_per_day["stay"], keywords["stay"])
-
-printTweetStats(df, sentiments_per_day)
-
+ssix = SSIXAnalyzer(data_dir)
 # Sentiment analysis for remaining tweets
 threshold_leave = -0.00661286
 threshold_stay = 0.00830461
