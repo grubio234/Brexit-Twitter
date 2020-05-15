@@ -8,7 +8,7 @@ import pandas as pd
 from TweetAnalyzer.config import data_dir
 from TweetAnalyzer import SSIXAnalyzer, TweetStore, sentiments
 
-def categorizeByKeywords(tweets, sentiment_counts, keywords):
+def categorizeIfHasKeyword(tweets, sentiment_counts, keywords):
     def perSentiment(tweets, sentiment_counts, keywords):
         def perSentimentAlgo(tweets, sentiment_counts, keywords):
             has_a_keyword = pd.Series(False, index=tweets.index)
@@ -64,67 +64,72 @@ keywords["undecided"] = ["euref", "eureferendum", "takecontrol"]
 keywords["stay"]      = ["#strongerin", "remain", "ukineu"]
 
 print("\n==== 1.) Categorize tweets by keyword. ====")
-df = categorizeByKeywords(df, sentiments_per_day, keywords)
-printTweetStats(df, sentiments_per_day)
-
-ssix = SSIXAnalyzer(data_dir)
-# Sentiment analysis for remaining tweets
-threshold_leave = -0.00661286
-threshold_stay = 0.00830461
-def scoreToSentiment(score):
-    if score <= threshold_leave:
-        return "leave"
-    elif score >= threshold_stay:
-        return "stay"
-    else:
-        return "undecided"
-df["score"] = df["text"].apply(ssix.getTweetScore)
-df["sentiment"] = df["score"].apply(scoreToSentiment)
-
-for day in df["date"].unique():
-    day_df = df[df["date"] == day]
-    sentiments_per_day["leave"][day] += sum(day_df["sentiment"] == "leave")
-    sentiments_per_day["stay"][day] += sum(day_df["sentiment"] == "stay")
-    sentiments_per_day["undecided"][day] += sum(day_df["sentiment"] == "undecided")
-
+df = categorizeIfHasKeyword(df, sentiments_per_day, keywords)
 printTweetStats(df, sentiments_per_day)
 
 
-loc = MultipleLocator(base=1.0)
-xfmt = DateFormatter('%d %b')
+print("\n==== 2.) Categorize tweets by sentiment analysis score. ====")
+score_function =  lambda n_leave, n_stay, n_undecided: n_stay - n_leave
+thresholds = {}
+thresholds["leave"] = -0.00661286
+thresholds["stay"]  = 0.00830461
 
-fig = plt.figure(figsize=(6,6))
-ax = plt.axes()
-ax.xaxis.set_major_formatter(xfmt)
-ax.xaxis.set_major_locator(loc)
-ax.set_title("Tweet count for leave / stay")
-w = 0.2
+def categorizeByScore(tweets, sentiments_per_day, score_function, thresholds):
+    def scoreToSentiment(score):
+        if score <= thresholds["leave"]:
+            return "leave"
+        elif score >= thresholds["stay"]:
+            return "stay"
+        else:
+            return "undecided"
 
-counts_leave = np.array([sentiments_per_day["leave"][day] for day in df["date"]])
-counts_stay = np.array([sentiments_per_day["stay"][day] for day in df["date"]])
-counts_other = np.array([sentiments_per_day["undecided"][day] for day in df["date"]])
-np_days = date2num(df["date"])
-ax.bar(np_days, counts_leave, width=w, color="r", label="leave")
-ax.bar(np_days+w, counts_stay, width=w, color="b", label="stay")
-ax.set_xlabel("Dates")
-ax.set_ylabel("Tweet count")
-plt.savefig("total_daycount_ls.pdf")
+    ssix = SSIXAnalyzer(score_function)
+    tweets["score"] = tweets["text"].apply(ssix.getTweetScore)
+    tweets["sentiment"] = tweets["score"].apply(scoreToSentiment)
 
-tot = counts_leave + counts_stay + counts_other
-tot = np.max(np.vstack((tot, np.ones_like(tot))), axis=0)
-counts_leave_normalised = 1.0*counts_leave/tot
-counts_other_normalised = 1.0*counts_other/tot
-counts_stay_normalised = 1.0*counts_stay/tot
+    for day in sentiments_per_day.index:
+        day_tweets = tweets[tweets["date"] == day]
+        for s in sentiments:
+            sentiments_per_day[s][day] += sum(day_tweets["sentiment"] == s)
 
-fig = plt.figure(figsize=(6,6))
-ax = plt.axes()
-ax.xaxis.set_major_formatter(xfmt)
-ax.xaxis.set_major_locator(loc)
-ax.set_title("Tweet count for leave / other / stay")
-w = 0.6
-ax.bar(np_days, counts_leave_normalised, width=w, color="r", label="leave")
-ax.bar(np_days, counts_stay_normalised, width=w, bottom=counts_leave_normalised, color="b", label="stay")
-ax.bar(np_days, counts_other_normalised, width=w, bottom=1-counts_other_normalised, color="g", label="other")
-ax.set_xlabel("Dates")
-ax.set_ylabel("Tweet count")
-plt.savefig("relative_daycount.pdf")
+
+categorizeByScore(df, sentiments_per_day, score_function, thresholds)
+without_category = pd.DataFrame()
+printTweetStats(without_category, sentiments_per_day)
+
+def dailySentimentPlots(sentiments_per_day, save_path="./"):
+    loc = MultipleLocator(base=1.0)
+    xfmt = DateFormatter('%d %b')
+
+    fig = plt.figure(figsize=(6,6))
+    ax = plt.axes()
+    ax.xaxis.set_major_formatter(xfmt)
+    ax.xaxis.set_major_locator(loc)
+    ax.set_title("Tweet count for leave / stay")
+    w = 0.2
+
+    np_days = date2num(sentiments_per_day.index.tolist())
+    ax.bar(np_days, sentiments_per_day["leave"], width=w, color="r", label="leave")
+    ax.bar(np_days+w, sentiments_per_day["stay"], width=w, color="b", label="stay")
+    ax.set_xlabel("Dates")
+    ax.set_ylabel("Tweet count")
+    plt.savefig(save_path+"total_daycount_ls.pdf")
+
+    tot = sentiments_per_day["leave"] + sentiments_per_day["stay"] + sentiments_per_day["undecided"]
+    tot.replace(0, 1, inplace=True)
+    tot.astype(float)
+
+    fig = plt.figure(figsize=(6,6))
+    ax = plt.axes()
+    ax.xaxis.set_major_formatter(xfmt)
+    ax.xaxis.set_major_locator(loc)
+    ax.set_title("Tweet count for leave / other / stay")
+    w = 0.6
+    ax.bar(np_days, sentiments_per_day["leave"] / tot, width=w, color="r", label="leave")
+    ax.bar(np_days, sentiments_per_day["stay"] / tot, width=w, bottom=sentiments_per_day["leave"] / tot, color="b", label="stay")
+    ax.bar(np_days, sentiments_per_day["undecided"] / tot, width=w, bottom=1-sentiments_per_day["undecided"] / tot, color="g", label="other")
+    ax.set_xlabel("Dates")
+    ax.set_ylabel("Tweet count")
+    plt.savefig(save_path+"relative_daycount.pdf")
+
+dailySentimentPlots(sentiments_per_day)
