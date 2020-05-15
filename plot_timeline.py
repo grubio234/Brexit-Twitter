@@ -11,12 +11,6 @@ from matplotlib.ticker import MultipleLocator
 def get_day(created_at):
     return created_at[:10]
 
-#loc = MultipleLocator(base=10.0)
-xfmt = DateFormatter('%d %b')
-
-fig = plt.figure()
-ax = plt.axes()
-
 def get_timeline_count(tweets_file, keywords=None, timezones=None):
     # get dataframe
     l = TweetStore(tweets_file)
@@ -83,7 +77,7 @@ def plot_timelines(ax, x, y, colors, labels):
     assert N == len(y), "x and y must be lists of same length"
 
     bar_width = 0.8/N
-
+    xfmt = DateFormatter('%d %b')
     ax.xaxis.set_major_formatter(xfmt)
     ax.xaxis.set_major_locator(MultipleLocator(base=1.0))
     for i in range(N):
@@ -134,6 +128,7 @@ def run_experiment(tweets_csv, keywords, timezoneslist, titles, colors):
         ax = plt.axes()
         loc = MultipleLocator(base=5.0)
         loc.MAXTICKS = 10000
+        xfmt = DateFormatter('%d %b')
         ax.xaxis.set_major_formatter(xfmt)
         ax.xaxis.set_major_locator(loc)
         box = ax.get_position()
@@ -154,18 +149,8 @@ def run_experiment(tweets_csv, keywords, timezoneslist, titles, colors):
         #plt.legend(loc="best", bbox_to_anchor=(1, 0.6))
         plt.savefig("frequency_stacked_{}.pdf".format(title))
 
-
-
-
-# file with tweets
-#tweets_csv = data_dir + "Feb_16.csv"
-#tweets_csv = data_dir + "Apr_16.csv"
-#tweets_csv = data_dir + "brexit_data.csv"
-tweets_csv = data_dir + "brexit_short.csv"
-#tweets_csv = data_dir + "april_13_15.csv"
-
-# Europe
-EU = ["Amsterdam", "Andorra", "Athens", "Belfast", "Belgrade", "Berlin", "Bern",
+def timeZonesEurope():
+    return ["Amsterdam", "Andorra", "Athens", "Belfast", "Belgrade", "Berlin", "Bern",
       "Brussels", "Bucharest", "Budapest", "Copenhagen", "Dublin", "Edinburgh",
       "Helsinki", "Istanbul", "Kaliningrad", "Kiev", "Lisbon", "London", "Luxembourg",
       "Madrid", "Malta", "Minsk", "Moscow", "Oslo", "Paris", "Prague", "Riga",
@@ -173,6 +158,7 @@ EU = ["Amsterdam", "Andorra", "Athens", "Belfast", "Belgrade", "Berlin", "Bern",
       "Vienna", "Warsaw", "Zurich"]
 
 def run_stacked():
+    tweets_csv = data_dir + "april_13_15.csv"
     keywords = ["strongerin", "ukineu", "ukip", "leave", "remain", "euref"]
     timezones = [ ["London"],
                   ["US"],
@@ -185,6 +171,7 @@ def run_stacked():
     run_experiment(tweets_csv, keywords, timezones, titles, colors)
 
 def run_brexit():
+    tweets_csv = data_dir + "april_13_15.csv"
     # Create plot for total activity
     keywords = ["", "brexit"]
     colors = ["b", "r"]
@@ -200,5 +187,6 @@ def run_brexit():
     #plt.legend(loc="best")
     plt.savefig("frequency_brexit.pdf")
 
-#run_brexit()
-run_stacked()
+if __name__ == "__main__":
+    #run_brexit()
+    run_stacked()
