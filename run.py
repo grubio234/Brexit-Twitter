@@ -1,5 +1,7 @@
 from __future__ import print_function
 import runpy
+from sentiment import sentimentAnalysis
+from TweetAnalyzer.config import data_dir
 
 def simpleTest():
     from TweetAnalyzer.config import data_dir
@@ -17,13 +19,12 @@ def simpleTest():
     print(ssix.getTweetScores(tweets))
     print(vader.getTweetScores(tweets))
 
-def testSentiment():
-    runpy.run_path("sentiment.py")
-
 def testTimeLine():
     runpy.run_path("plot_timeline.py")
 
 if __name__ == "__main__":
+    save_folder = "./"
+
     simpleTest()
-    testSentiment()
+    sentimentAnalysis(data_dir + "May_16.csv", save_folder)
     testTimeLine()
