@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from collections import defaultdict
 import re
 try:
@@ -45,7 +46,7 @@ def getRawWordCounts(df, sentiment):
 
 def removeCommonWords(word_dict):
     common_wordlist = analyzer_data / "common_words.txt"
-    with open(common_wordlist) as f:
+    with open(str(common_wordlist)) as f:
         for line in f.readlines():
             common_word = line.strip()
             word_dict.pop(common_word, None)

@@ -32,7 +32,7 @@ def vaderLexiconFile(directory=analyzer_data):
     vader_lexicon = ( directory / "sentiment" /
         "vader_lexicon.zip" / "vader_lexicon" / "vader_lexicon.txt" )
     if not vader_lexicon.exists():
-        nltk.download("vader_lexicon", download_dir=directory)
+        nltk.download("vader_lexicon", download_dir=str(directory))
     return str(vader_lexicon)
 
 class VaderAnalyzer(Analyzer):
