@@ -1,7 +1,7 @@
 # Brexit-Twitter
 
 <p align="center">
-![brexit-img](assets/brexit.jpg)
+  <img src="assets/brexit.jpg" alt="brexit-imge"/>
 </p>
 
 A Twitter sentiment analysis studying the Brexit referendum 2017.
