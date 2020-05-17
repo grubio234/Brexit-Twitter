@@ -1,11 +1,13 @@
 # Brexit-Twitter
 
+<p align="center">
 ![brexit-img](assets/brexit.jpg)
+</p>
 
 A Twitter sentiment analysis studying the Brexit referendum 2017.
 
 This code was originally created for the final project of [Data Science in Techno-Socio-Economic Systems](http://www.vorlesungsverzeichnis.ethz.ch/Vorlesungsverzeichnis/lerneinheit.view?lang=en&lerneinheitId=113553&semkez=2017S&ansicht=KATALOGDATEN&) course at ETH Zurich in 2017.
-The team members were @Cryoris and @kunathj.
+The team members were [@Cryoris](https://github.com/Cryoris) and [@kunathj](https://github.com/kunathj).
 The short [report](BrexitPaper_29-05-2017.pdf) should give an idea of what this project is all about.
 
 ## Deviation of the project from the report
