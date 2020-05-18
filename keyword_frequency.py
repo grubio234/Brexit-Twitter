@@ -1,6 +1,10 @@
 from __future__ import print_function
+try:
+    from pathlib import Path
+except ImportError:
+    from pathlib2 import Path
 import pandas as pd
-from TweetAnalyzer.config import data_dir
+from TweetAnalyzer.config import data_dir, test_data_dir
 from TweetAnalyzer import SSIXAnalyzer, TweetStore
 from util_plotting import keywordFrequencyPlot
 
@@ -73,7 +77,7 @@ def brexitMentionFrequencyInDataset(tweets, save_folder="./"):
     keywordFrequencyPlot(df, title, save_as, colors)
 
 if __name__ == "__main__":
-    tweet_files = data_dir + "May_16.csv"
+    tweet_files = [str(fn) for fn in Path(test_data_dir).glob("*.csv")]
     tweets = TweetStore(tweet_files).getTweets()
     brexitMentionFrequencyInDataset(tweets)
     keywordSharePerTimezone(tweets)

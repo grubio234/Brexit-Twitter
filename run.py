@@ -1,5 +1,9 @@
 from __future__ import print_function
-from TweetAnalyzer.config import data_dir
+try:
+    from pathlib import Path
+except ImportError:
+    from pathlib2 import Path
+from TweetAnalyzer.config import data_dir, test_data_dir
 from TweetAnalyzer import SSIXAnalyzer, VaderAnalyzer, TweetStore
 from sentiment import sentimentAnalysis
 from keyword_frequency import (brexitMentionFrequencyInDataset,
@@ -30,7 +34,8 @@ if __name__ == "__main__":
     ssixVsVader()
 
     save_folder = "./"
-    tweet_files = data_dir + "May_16.csv"
+    #tweet_files = [str(fn) for fn in Path(test_data_dir).glob("*.csv")]
+    tweet_files = [str(fn) for fn in Path(data_dir).glob("*.csv")]
     tweets = TweetStore(tweet_files).getTweets()
 
     sentimentAnalysis(tweets, save_folder)

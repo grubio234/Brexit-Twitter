@@ -1,6 +1,10 @@
 from __future__ import print_function
+try:
+    from pathlib import Path
+except ImportError:
+    from pathlib2 import Path
 import pandas as pd
-from TweetAnalyzer.config import data_dir
+from TweetAnalyzer.config import data_dir, test_data_dir
 from TweetAnalyzer import SSIXAnalyzer, TweetStore, sentiments
 from util_plotting import dailySentimentPlots
 
@@ -71,7 +75,7 @@ def categorizeByScore(tweets, sentiments_per_day, score_function, thresholds):
 def sentimentAnalysis(tweets=None, save_folder="./"):
     def setupDataFrames(tweets):
         if tweets is None:
-            tweet_files = [data_dir + "May_16.csv"]
+            tweet_files = [str(fn) for fn in Path(test_data_dir).glob("*.csv")]
             tweets = TweetStore(tweet_files).getTweets()
         days = sorted(tweets["date"].unique())
         sentiments_per_day = pd.DataFrame(0, index=days, columns=sentiments)
