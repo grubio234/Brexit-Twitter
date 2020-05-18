@@ -8,28 +8,30 @@ from TweetAnalyzer.config import data_dir, test_data_dir
 from TweetAnalyzer import SSIXAnalyzer, TweetStore
 from util_plotting import keywordFrequencyPlot
 
-timezones_2016_already_encountered = False
-def isUTCOffsetNotTimezone(tz):
-    if isinstance(tz, int):
-        if not timezones_2016_already_encountered:
-            timezones_2016_already_encountered = True
-            print("This timezones value is an integer. The behaviour is "
+def dailyCountsForKeywordGroup(tweets, keyword_group, timezones=None,
+        print_utc_info=True):
+    def changeUTCOffsetToNoTimezone(tweets, print_utc_info):
+        def utcOffsetToNone(string_tz_and_utc_offset):
+            if isinstance(string_tz_and_utc_offset, (int, float)):
+                string_tz_and_utc_offset = "None"
+            return string_tz_and_utc_offset
+
+        timezones_and_utc_offset = tweets["user_time_zone"]
+        only_tz = timezones_and_utc_offset.apply(utcOffsetToNone)
+        if print_utc_info and not only_tz.equals(timezones_and_utc_offset):
+            print("This timezones value is a number. The behavior is "
                 "expected for the 2016 tweets colleted by COSS. They were not "
                 "collecting the user's timezone but instead his utc offset in "
                 "minutes. Here, these values will be interpreted as 'timezone "
                 "not provided'. This information will only be printed once.")
-        return True
-    return False
+        return only_tz
 
-def dailyCountsForKeywordGroup(tweets, keyword_group, timezones=None):
     def hasKeyword(text):
         for keyword in keyword_group:
             if keyword in text:
                 return True
         return False
     def isInTimezone(t):
-        if isUTCOffsetNotTimezone(t):
-            return False
         for timezone in timezones:
             if timezone in t:
                 return True
@@ -37,17 +39,20 @@ def dailyCountsForKeywordGroup(tweets, keyword_group, timezones=None):
 
     mask = pd.Series(True, index=tweets.index)
     if not timezones is None:
-        mask = tweets["user_time_zone"].apply(isInTimezone) & mask
+        timezone = changeUTCOffsetToNoTimezone(tweets, print_utc_info)
+        mask = timezone.apply(isInTimezone) & mask
     if not keyword_group is None:
         mask = tweets["text"].apply(hasKeyword) & mask
 
     per_day = tweets["date"][mask].value_counts()
     return per_day
 
-def dailyCountsPerGroup(tweets, keyword_groups, timezones=None):
+def dailyCountsPerGroup(tweets, keyword_groups, timezones=None,
+        print_utc_info=True):
     keyword_counts = pd.DataFrame()
-    for name, kw_group in keyword_groups.items():
-        daily_counts = dailyCountsForKeywordGroup(tweets, kw_group, timezones)
+    for i, (name, kw_group) in enumerate(keyword_groups.items()):
+        daily_counts = dailyCountsForKeywordGroup(tweets, kw_group, timezones,
+            print_utc_info=(i==0 and print_utc_info))
         keyword_counts[name] = daily_counts
     return keyword_counts
 
@@ -71,8 +76,9 @@ def keywordSharePerTimezone(tweets, save_folder="./"):
         "Europe": timeZonesEurope(),
     }
 
-    for name, zones in timezones.items():
-        df = dailyCountsPerGroup(tweets, keywords, zones)
+    for i, (name, zones) in enumerate(timezones.items()):
+        print_utc_info = (i == 0)
+        df = dailyCountsPerGroup(tweets, keywords, zones, print_utc_info)
 
         title = "Timezone: {}".format(name)
         save_as = "frequency_stacked_{}.pdf".format(name)
