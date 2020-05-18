@@ -8,6 +8,19 @@ from TweetAnalyzer.config import data_dir, test_data_dir
 from TweetAnalyzer import SSIXAnalyzer, TweetStore
 from util_plotting import keywordFrequencyPlot
 
+timezones_2016_already_encountered = False
+def isUTCOffsetNotTimezone(tz):
+    if isinstance(tz, int):
+        if not timezones_2016_already_encountered:
+            timezones_2016_already_encountered = True
+            print("This timezones value is an integer. The behaviour is "
+                "expected for the 2016 tweets colleted by COSS. They were not "
+                "collecting the user's timezone but instead his utc offset in "
+                "minutes. Here, these values will be interpreted as 'timezone "
+                "not provided'. This information will only be printed once.")
+        return True
+    return False
+
 def dailyCountsForKeywordGroup(tweets, keyword_group, timezones=None):
     def hasKeyword(text):
         for keyword in keyword_group:
@@ -15,6 +28,8 @@ def dailyCountsForKeywordGroup(tweets, keyword_group, timezones=None):
                 return True
         return False
     def isInTimezone(t):
+        if isUTCOffsetNotTimezone(t):
+            return False
         for timezone in timezones:
             if timezone in t:
                 return True
